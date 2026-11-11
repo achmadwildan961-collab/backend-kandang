@@ -14,6 +14,33 @@ use Illuminate\Support\Facades\Gate;
 
 class SensorController extends Controller
 {
+    public function export(ChartHistoryRequest $request, Coop $coop, SensorHistoryService $history)
+    {
+        Gate::authorize('view', $coop);
+        [$from, $to] = $request->dateBounds();
+        // Same complete-batch aggregation as the graph; at most 400 auto buckets.
+        // Build the bounded result before sending headers so errors stay JSON.
+        $chart = $history->chart($coop, $from, $to, null, 500, 1);
+        $stream = fopen('php://temp', 'r+');
+        fwrite($stream, "\xEF\xBB\xBF");
+        fputcsv($stream, ['Timestamp (UTC)', 'Indoor Average Temperature (°C)', 'Outdoor Temperature (°C)', 'Humidity (%)', 'Gas (ADC)'], ',', '"', '', "\r\n");
+        foreach ($chart['data'] as $row) {
+            fputcsv($stream, [$row['recorded_at'], $row['indoor_average'], $row['outdoor_temperature'], $row['indoor_humidity'], $row['gas_adc']], ',', '"', '', "\r\n");
+        }
+        rewind($stream);
+        $csv = stream_get_contents($stream);
+        fclose($stream);
+        $filename = 'coop-'.$coop->id.'-sensors-'.$from->format('Ymd').'-'.$to->format('Ymd').'.csv';
+
+        return response($csv, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Cache-Control' => 'private, no-store',
+            'X-Export-Rows' => (string) $chart['meta']['total'],
+            'X-Aggregation-Seconds' => (string) $chart['meta']['interval_seconds'],
+        ]);
+    }
+
     public function chart(ChartHistoryRequest $request, Coop $coop, SensorHistoryService $history)
     {
         Gate::authorize('view', $coop);

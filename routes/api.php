@@ -36,6 +36,7 @@ Route::prefix('v1')->group(function () {
         Route::get('coops/{coop}/sensors/indoor', [SensorController::class, 'indoor']);
         Route::get('coops/{coop}/sensors/history', [SensorController::class, 'history']);
         Route::get('coops/{coop}/sensors/chart', [SensorController::class, 'chart']);
+        Route::get('coops/{coop}/sensors/export', [SensorController::class, 'export']);
         Route::get('coops/{coop}/settings', [SettingsController::class, 'show']);
         Route::put('coops/{coop}/settings', [SettingsController::class, 'update']);
         Route::get('notifications', [NotificationController::class, 'index']);

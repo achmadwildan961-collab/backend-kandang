@@ -20,6 +20,16 @@ class TelemetryIngestor
         }
         [$device, $kind] = $this->devices->resolve($topic);
         $data = $this->validator->validate($payload, $kind);
+        $mapping = config('mqtt.device_sensors');
+        if (! is_array($mapping)) {
+            throw new InvalidArgumentException('Invalid device sensor mapping configuration.');
+        }
+        if ($kind === 'telemetry' && $mapping !== []) {
+            $allowed = $mapping[$device->device_identifier] ?? null;
+            if (! is_array($allowed) || array_diff(array_column($data['readings'], 'sensor_identifier'), $allowed)) {
+                throw new InvalidArgumentException('Sensor not assigned to this registered device.');
+            }
+        }
         $key = hash('sha256', $data['message_id']);
         $hash = hash('sha256', $topic."\n".$payload);
 

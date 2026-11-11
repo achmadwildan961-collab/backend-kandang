@@ -19,6 +19,25 @@ use Tests\ApiTestCase;
 
 class MqttIngestionTest extends ApiTestCase
 {
+    public function test_configured_sensor_mapping_supports_two_device_types_in_one_coop(): void
+    {
+        $node = $this->coop->devices()->create(['device_identifier' => 'NODEMCU_TEST', 'name' => 'NodeMCU', 'type' => 'nodemcu']);
+        config(['mqtt.device_sensors' => [
+            'ESP32_DEVICE_A' => SensorCatalog::indoorIdentifiers(),
+            'NODEMCU_TEST' => ['outdoor_temperature', 'gas_adc'],
+        ]]);
+        $this->assertSame('accepted', $this->ingest($this->payload()));
+        $topic = 'smart-kandang/coops/'.$this->coop->id.'/devices/'.$node->device_identifier.'/telemetry';
+        $payload = $this->payload('node-1', null, ['outdoor_temperature' => 25, 'gas_adc' => 800]);
+        $this->assertSame('accepted', app(TelemetryIngestor::class)->ingest($topic, json_encode($payload)));
+        $this->assertSame('duplicate', app(TelemetryIngestor::class)->ingest($topic, json_encode($payload)));
+        $this->asUser($this->user)->getJson('/api/v1/coops/'.$this->coop->id.'/sensors/latest')->assertOk()
+            ->assertJsonPath('data.indoor_temperature.average', 30.38)
+            ->assertJsonPath('data.outdoor_temperature.value', 25);
+        $this->expectException(InvalidArgumentException::class);
+        app(TelemetryIngestor::class)->ingest($topic, json_encode($this->payload('wrong-device')));
+    }
+
     private function topic(string $kind = 'telemetry'): string
     {
         return 'smart-kandang/coops/'.$this->coop->id.'/devices/ESP32_DEVICE_A/'.$kind;

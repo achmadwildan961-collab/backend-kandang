@@ -9,7 +9,7 @@ use Illuminate\Validation\ValidationException;
 
 class SensorHistoryService
 {
-    public function chart(Coop $coop, CarbonImmutable $from, CarbonImmutable $to, ?int $interval, int $perPage): array
+    public function chart(Coop $coop, CarbonImmutable $from, CarbonImmutable $to, ?int $interval, int $perPage, ?int $page = null): array
     {
         $duration = max(1, $to->getTimestamp() - $from->getTimestamp());
         $interval ??= collect([60, 300, 900, 3600, 21600, 86400])->first(fn ($s) => ceil($duration / $s) + 1 <= 400) ?? 86400;
@@ -35,7 +35,7 @@ class SensorHistoryService
         $bucket = DB::getDriverName() === 'sqlite' ? "CAST(strftime('%s', recorded_at) AS INTEGER) / $interval" : "FLOOR(UNIX_TIMESTAMP(recorded_at) / $interval)";
         $buckets = DB::query()->fromSub($samples, 'samples')
             ->selectRaw("$bucket AS bucket, MIN(recorded_at) AS recorded_at, AVG(indoor_average) AS indoor_average, COUNT(indoor_average) AS indoor_sample_count, AVG(outdoor_temperature) AS outdoor_temperature, AVG(indoor_humidity) AS indoor_humidity, AVG(gas_adc) AS gas_adc")
-            ->groupBy('bucket')->orderBy('bucket')->paginate($perPage);
+            ->groupBy('bucket')->orderBy('bucket')->paginate($perPage, ['*'], 'page', $page);
         $cast = fn ($row) => collect((array) $row)->map(fn ($value, $key) => $value === null ? null : ($key === 'indoor_sample_count' ? (int) $value : round((float) $value, 4)))->all();
         $data = $buckets->getCollection()->map(function ($row) use ($cast) {
             $time = CarbonImmutable::parse($row->recorded_at, 'UTC')->toISOString();

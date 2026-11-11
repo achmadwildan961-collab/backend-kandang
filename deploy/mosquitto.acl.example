@@ -1,0 +1,12 @@
+# Substitute actual registered identifiers and coop ID; each board has its own account.
+user laravel-subscriber
+topic read smart-kandang/coops/+/devices/+/telemetry
+topic read smart-kandang/coops/+/devices/+/status
+
+user esp32-publisher
+topic write smart-kandang/coops/COOP_ID/devices/ESP32_IDENTIFIER/telemetry
+topic write smart-kandang/coops/COOP_ID/devices/ESP32_IDENTIFIER/status
+
+user nodemcu-publisher
+topic write smart-kandang/coops/COOP_ID/devices/NODEMCU_IDENTIFIER/telemetry
+topic write smart-kandang/coops/COOP_ID/devices/NODEMCU_IDENTIFIER/status

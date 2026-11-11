@@ -1,0 +1,15 @@
+# VM 3: replace private listener address and TLS paths. Never enable anonymous access.
+per_listener_settings true
+listener 8883 VM3_PRIVATE_IP
+protocol mqtt
+allow_anonymous false
+password_file /etc/mosquitto/passwd
+acl_file /etc/mosquitto/acl
+certfile /etc/mosquitto/certs/fullchain.pem
+keyfile /etc/mosquitto/certs/privkey.pem
+persistence true
+persistence_location /var/lib/mosquitto/
+log_dest syslog
+log_type error
+log_type warning
+log_type notice

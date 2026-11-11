@@ -74,8 +74,8 @@ class ChartHistoryTest extends ApiTestCase
 
     public function test_cors_preflight_allows_configured_origin_and_bearer_header_only(): void
     {
-        $this->withHeaders(['Origin' => 'http://localhost:5173', 'Access-Control-Request-Method' => 'GET', 'Access-Control-Request-Headers' => 'authorization'])->options('/api/v1/coops/1/sensors/chart')
-            ->assertSuccessful()->assertHeader('Access-Control-Allow-Origin', 'http://localhost:5173');
+        $this->withHeaders(['Origin' => 'http://localhost:58111', 'Access-Control-Request-Method' => 'GET', 'Access-Control-Request-Headers' => 'authorization'])->options('/api/v1/coops/1/sensors/chart')
+            ->assertSuccessful()->assertHeader('Access-Control-Allow-Origin', 'http://localhost:58111');
         $response = $this->withHeaders(['Origin' => 'https://untrusted.invalid', 'Access-Control-Request-Method' => 'GET'])->options('/api/v1/coops/1/sensors/chart');
         $this->assertNotSame('https://untrusted.invalid', $response->headers->get('Access-Control-Allow-Origin'));
     }

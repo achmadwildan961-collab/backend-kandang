@@ -1,0 +1,27 @@
+[Unit]
+Description=Smart Kandang MQTT ingestion
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=smart-kandang
+Group=smart-kandang
+WorkingDirectory=/srv/smart-kandang-backend
+ExecStart=/usr/bin/php artisan mqtt:listen
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGTERM
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/smart-kandang-backend/storage /srv/smart-kandang-backend/bootstrap/cache
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -12,16 +12,35 @@ Start MySQL through Laragon if stopped. Alternatively, run this PowerShell comma
 Start-Process -FilePath 'C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysqld.exe' -ArgumentList '--defaults-file=C:\laragon\bin\mysql\mysql-8.4.3-winx64\my.ini','--bind-address=127.0.0.1','--mysqlx-bind-address=127.0.0.1' -WindowStyle Hidden
 ```
 
+If login returns HTTP 500 with `SQLSTATE[HY000] [2002]` in `storage/logs/laravel.log`, check that MySQL is listening on `127.0.0.1:3306` (`Get-NetTCPConnection -LocalPort 3306 -State Listen`). A running Laravel server, successful CORS preflight, validation response, or `/up` response does not establish a working database connection. Start the existing MySQL instance above; do not reset the database or run migrations to fix a stopped server. Use the private `DEV_ADMIN_*` / `DEV_USER_*` credentials from `.env`; an incorrect password or email returns HTTP 422.
+
 Start the API:
 
 ```powershell
 Set-Location D:\FlutterProjects\smart-kandang-backend
 $env:Path = 'C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64;C:\laragon\bin\composer;' + $env:Path
-php artisan migrate:status
+php artisan config:clear
 php artisan serve --host=127.0.0.1 --port=8000
 ```
 
 Base URL: `http://127.0.0.1:8000/api/v1`. Health check: `GET /up`. Stop with Ctrl+C. The HTTP API runs independently of MQTT. Once a broker is configured, run `php artisan mqtt:listen` separately and `php artisan schedule:work` for device timeout checks. Local simulation needs no broker.
+
+For local Flutter Web, keep this exact allowlist in the existing backend `.env`:
+
+```dotenv
+CORS_ALLOWED_ORIGINS=http://localhost:58111,http://127.0.0.1:58111
+```
+
+After changing it, run `php artisan config:clear` and restart any running API server. Laravel's global `HandleCors` middleware handles OPTIONS for `api/*`, including `/api/v1/*`. Sanctum uses bearer tokens; cross-origin cookies remain disabled. Production must set its own explicit HTTPS frontend origins; the shared CORS config has no localhost or wildcard fallback.
+
+In a second terminal:
+
+```powershell
+Set-Location D:\FlutterProjects\project_kandangayam
+flutter run -d chrome --web-hostname=localhost --web-port=58111 --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1
+```
+
+The define is `API_BASE_URL` and includes `/api/v1`. Keep the fixed web port; a randomly selected port will not match the allowlist. Refresh the browser after restarting the backend. CORS regression tests run with `php artisan test --filter=CorsTest` using the default in-memory SQLite configuration.
 
 ## Setup on another machine
 
@@ -167,3 +186,6 @@ Future Flutter clients should consume `data.user.role/status`, securely store be
 See [current stabilization verification and deployment instructions](../project_kandangayam/STABILIZATION_WEB_READINESS.md). The same API and database serve Android and Flutter Web. VM 2 can serve both Flutter static files and Laravel using [the Nginx template](deploy/nginx-flutter-web.conf.example); no fourth VM is required. This template has not been deployed to the remote infrastructure.
 
 The additive chart endpoint accepts `from`, `to`, `page`, `per_page` (maximum 100), and optional `interval_seconds` (60, 300, 900, 3600, 21600, 86400). Date ranges are ordered and limited to 366 days; responses are bounded to 500 buckets, with automatic intervals targeting at most 400. The response contains `data`, pagination `meta` including `interval_seconds`, and `summary`. Indoor averages require all five valid sensor readings at the exact same timestamp before time-bucket aggregation. Separate timestamps never fill missing measurements. Summary averages are calculated over complete original samples, and the indoor maximum is the true complete-sample peak. Raw history remains available with its existing contract. No schema migration was needed for these changes.
+# November 11 integration handover
+
+Current deployment: [DEPLOYMENT_HANDOVER.md](DEPLOYMENT_HANDOVER.md). Hardware and MQTT payloads: [HARDWARE_MQTT_CONTRACT.md](HARDWARE_MQTT_CONTRACT.md). Final local evidence and limitations: [PRESENTATION_READINESS.md](../project_kandangayam/PRESENTATION_READINESS.md). Existing setup documentation follows; historical test counts below are not the latest results.
