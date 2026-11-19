@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CoopController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\EventController;
+use App\Http\Controllers\Api\LightingController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SensorController;
@@ -39,6 +40,9 @@ Route::prefix('v1')->group(function () {
         Route::get('coops/{coop}/sensors/export', [SensorController::class, 'export']);
         Route::get('coops/{coop}/settings', [SettingsController::class, 'show']);
         Route::put('coops/{coop}/settings', [SettingsController::class, 'update']);
+        Route::get('coops/{coop}/lighting', [LightingController::class, 'show']);
+        Route::put('coops/{coop}/lighting/settings', [LightingController::class, 'update']);
+        Route::post('coops/{coop}/lighting/commands', [LightingController::class, 'command']);
         Route::get('notifications', [NotificationController::class, 'index']);
         Route::patch('notifications/read-all', [NotificationController::class, 'readAll']);
         Route::patch('notifications/{notification}/read', [NotificationController::class, 'read']);

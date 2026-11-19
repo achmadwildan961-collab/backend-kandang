@@ -5,6 +5,7 @@ namespace App\Services\Mqtt;
 use App\Models\Coop;
 use App\Models\Device;
 use App\Services\AlertEvaluationService;
+use App\Services\LightingContract;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -49,6 +50,16 @@ class TelemetryIngestor
                 return 'duplicate';
             }
             if ($kind === 'telemetry') {
+                foreach ($data['readings'] as &$reading) {
+                    $reading['measurement_version'] = null;
+                    if ($reading['sensor_identifier'] === 'outdoor_light_adc') {
+                        if (! LightingContract::accepts($locked)) {
+                            throw new InvalidArgumentException('LDR is not assigned to this verified device.');
+                        }
+                        $reading['measurement_version'] = config('lighting.measurement_version');
+                    }
+                }
+                unset($reading);
                 $timestamp = $data['sent_at']->format('Y-m-d H:i:s.u');
                 // Never overwrite an existing sample or silently accept partial batches.
                 if ($coop->readings()->where('recorded_at', $timestamp)->whereIn('sensor_identifier', array_column($data['readings'], 'sensor_identifier'))->exists()) {

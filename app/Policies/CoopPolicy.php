@@ -14,7 +14,7 @@ class CoopPolicy
 
     public function updateSettings(User $user, Coop $coop): bool
     {
-        return $user->canAccessCoop($coop);
+        return $user->isAdmin() && $user->canAccessCoop($coop);
     }
 
     public function create(User $user): bool

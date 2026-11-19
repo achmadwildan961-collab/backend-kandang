@@ -4,6 +4,11 @@ namespace App\Http\Requests;
 
 class SettingsRequest extends ApiRequest
 {
+    public function authorize(): bool
+    {
+        return $this->user()?->can('updateSettings', $this->route('coop')) ?? false;
+    }
+
     public function rules(): array
     {
         return [

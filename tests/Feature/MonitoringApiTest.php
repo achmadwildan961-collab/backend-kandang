@@ -99,7 +99,7 @@ class MonitoringApiTest extends ApiTestCase
     public function test_settings_reevaluate_and_preferences_do_not_disable_status_or_events(): void
     {
         $this->readings();
-        $this->asUser($this->user);
+        $this->asUser($this->admin);
         $uri = '/api/v1/coops/'.$this->coop->id.'/settings';
         $this->putJson($uri, $this->settings(['notification_preferences' => ['push_notifications' => false], 'gas_threshold' => 1000]))->assertOk()->assertJsonMissingPath('data.alert_state');
         $this->assertSame(3, SystemEvent::count());

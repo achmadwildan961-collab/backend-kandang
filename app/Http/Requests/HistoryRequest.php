@@ -15,7 +15,7 @@ class HistoryRequest extends PaginationRequest
             'from' => ['sometimes', 'date'],
             'to' => array_merge(['sometimes', 'date'], $this->filled('from') ? ['after_or_equal:from'] : []),
             'sensor_identifier' => ['sometimes', Rule::in(array_keys(SensorCatalog::series()))],
-            'sensor_type' => ['sometimes', Rule::in(['indoor_temperature', 'outdoor_temperature', 'indoor_humidity', 'outdoor_humidity', 'gas'])],
+            'sensor_type' => ['sometimes', Rule::in(array_unique(array_column(SensorCatalog::series(), 'sensor_type')))],
             'event_type' => ['sometimes', Rule::in(['high_indoor_temperature', 'low_outdoor_temperature', 'high_gas_level', 'sensor_recovered', 'device_disconnected', 'device_reconnected', 'configuration_changed'])],
         ]);
     }

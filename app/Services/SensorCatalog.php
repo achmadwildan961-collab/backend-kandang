@@ -24,6 +24,10 @@ class SensorCatalog
             $items[$id] = ['sensor_identifier' => $id, 'sensor_type' => $type, 'unit' => $unit, 'min' => $min, 'max' => $max];
         }
 
+        if (LightingContract::verified()) {
+            $items['outdoor_light_adc'] = ['sensor_identifier' => 'outdoor_light_adc', 'sensor_type' => 'outdoor_light', 'unit' => 'adc', 'min' => (int) config('lighting.adc_min'), 'max' => (int) config('lighting.adc_max')];
+        }
+
         return $items;
     }
 }
