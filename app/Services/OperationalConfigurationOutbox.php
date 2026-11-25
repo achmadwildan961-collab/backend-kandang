@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Coop;
 use App\Models\CoopSetting;
+use App\Services\Integration\ConfigurationDelivery;
 use Illuminate\Support\Facades\DB;
 use LogicException;
 
@@ -34,5 +35,6 @@ class OperationalConfigurationOutbox
                         'status' => 'blocked', 'blocked_reason' => 'firmware_contract_unverified', 'created_at' => now(), 'updated_at' => now()]);
             }
         }
+        app(ConfigurationDelivery::class)->stage($coop, 'operational');
     }
 }

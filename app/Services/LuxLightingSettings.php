@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Coop;
+use App\Services\Integration\ConfigurationDelivery;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -79,6 +80,7 @@ class LuxLightingSettings
                 'status' => 'blocked', 'blocked_reason' => 'firmware_and_feedback_unverified', 'created_at' => now(), 'updated_at' => now(),
             ]);
             $after = $this->snapshot($coop);
+            app(ConfigurationDelivery::class)->stage($coop, 'lighting_lux');
             $this->events->record($coop, 'configuration_changed', 'info', 'Lighting lux draft updated', 'BH1750 lighting policy stored; device delivery remains blocked.',
                 ['source' => 'configuration', 'domain' => 'lighting_lux', 'changed_by' => $request->user()->id, 'before' => $before, 'after' => $after]);
 
