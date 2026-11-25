@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Poultriq ack",
+  "description": "STAGING PROPOSAL for integration; telemetry/status preserve existing v1. Semantic validation and current mapping additionally required.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "kind": {
+      "const": "ack"
+    },
+    "message_id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "coop_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "device_identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,100}$"
+    },
+    "boot_id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "sent_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "configuration_message_id": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "domain": {
+      "enum": [
+        "operational",
+        "lighting_lux"
+      ]
+    },
+    "config_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "payload_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "status": {
+      "enum": [
+        "acknowledged",
+        "applied",
+        "rejected"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "kind",
+    "message_id",
+    "coop_id",
+    "device_identifier",
+    "boot_id",
+    "sequence",
+    "sent_at",
+    "configuration_message_id",
+    "domain",
+    "config_version",
+    "payload_hash",
+    "status"
+  ],
+  "additionalProperties": false
+}

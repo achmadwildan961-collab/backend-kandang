@@ -1,5 +1,7 @@
 # MQTT Phase 7 — kompatibilitas dan batas aktivasi
 
+> **Arsip Phase7, superseded untuk firmware handoff oleh [kontrak Phase8.2](docs/firmware/POULTRIQ_FIRMWARE_CONTRACT_V1.md).** Usulan namespace `poultriq/v2`, LDR dan humidity belum pasti di bawah bukan kontrak yang diimplementasikan. Current telemetry tetap smart-kandang v1, draft integration memakai integration/v1, target light BH1750 lux dan humidity lima DHT22 sudah diimplementasikan Phase8.1. Riwayat dokumen dipertahankan; gunakan changelog/lock terbaru untuk sinkronisasi Arduino.
+
 Status 24 November 2026: **fondasi software lokal; bukan kontrak firmware yang disahkan**.
 
 > Revisi resmi BH1750 24 November 2026 mengganti target LDR. Rujukan LDR/ADC cahaya pada rencana awal di bawah adalah **LEGACY/DEPRECATED**. Addendum BH1750 di akhir dokumen mengatur kontrak terbaru; riwayat ADC tetap dipertahankan tanpa konversi.

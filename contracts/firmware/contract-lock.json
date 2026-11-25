@@ -1,0 +1,271 @@
+{
+  "package_version": "1.0.0-staging-proposal.1",
+  "baseline": "50e3f84fba214553fd7ee3ea9b7168b32343f357",
+  "hardware_approved": false,
+  "existing_wire_changed": false,
+  "topic_prefix": "smart-kandang",
+  "integration_contract": "phase8_draft",
+  "integration_schema_version": 1,
+  "qos": 1,
+  "retained_config_requires_explicit_authorization": true,
+  "physical_commands_enabled": false,
+  "sensors": {
+    "indoor_dht22_1": {
+      "sensor_type": "indoor_temperature",
+      "unit": "celsius",
+      "min": -40,
+      "max": 80
+    },
+    "indoor_dht22_2": {
+      "sensor_type": "indoor_temperature",
+      "unit": "celsius",
+      "min": -40,
+      "max": 80
+    },
+    "indoor_dht22_3": {
+      "sensor_type": "indoor_temperature",
+      "unit": "celsius",
+      "min": -40,
+      "max": 80
+    },
+    "indoor_dht22_4": {
+      "sensor_type": "indoor_temperature",
+      "unit": "celsius",
+      "min": -40,
+      "max": 80
+    },
+    "indoor_dht22_5": {
+      "sensor_type": "indoor_temperature",
+      "unit": "celsius",
+      "min": -40,
+      "max": 80
+    },
+    "indoor_dht22_1_humidity": {
+      "sensor_type": "indoor_humidity",
+      "unit": "percent",
+      "min": 0,
+      "max": 100
+    },
+    "indoor_dht22_2_humidity": {
+      "sensor_type": "indoor_humidity",
+      "unit": "percent",
+      "min": 0,
+      "max": 100
+    },
+    "indoor_dht22_3_humidity": {
+      "sensor_type": "indoor_humidity",
+      "unit": "percent",
+      "min": 0,
+      "max": 100
+    },
+    "indoor_dht22_4_humidity": {
+      "sensor_type": "indoor_humidity",
+      "unit": "percent",
+      "min": 0,
+      "max": 100
+    },
+    "indoor_dht22_5_humidity": {
+      "sensor_type": "indoor_humidity",
+      "unit": "percent",
+      "min": 0,
+      "max": 100
+    },
+    "outdoor_temperature": {
+      "sensor_type": "outdoor_temperature",
+      "unit": "celsius",
+      "min": -40,
+      "max": 80
+    },
+    "indoor_humidity": {
+      "sensor_type": "indoor_humidity",
+      "unit": "percent",
+      "min": 0,
+      "max": 100
+    },
+    "outdoor_humidity": {
+      "sensor_type": "outdoor_humidity",
+      "unit": "percent",
+      "min": 0,
+      "max": 100
+    },
+    "gas_adc": {
+      "sensor_type": "gas",
+      "unit": "adc",
+      "min": 0,
+      "max": 4095
+    },
+    "outdoor_light_lux": {
+      "sensor_type": "outdoor_light",
+      "unit": "lux",
+      "min": 0,
+      "max": 65535
+    }
+  },
+  "fixtures": [
+    {
+      "file": "fixtures/telemetry-indoor.json",
+      "schema": "telemetry",
+      "sha256": "fe3fff2f7a6354a2e77e7aaf03706d1b970dc4ce8f9c5a152b7365d762efa9ca"
+    },
+    {
+      "file": "fixtures/telemetry-outdoor.json",
+      "schema": "telemetry",
+      "sha256": "25301ca58dc698022641dd023a2bdef768e6a15e4fb217b6686db22609715ba2"
+    },
+    {
+      "file": "fixtures/status.json",
+      "schema": "status",
+      "sha256": "a43548f9c51a63b6d95234a2a29d70333004eb9c85ca4380d1dabc79ab601b44"
+    },
+    {
+      "file": "fixtures/config-operational.json",
+      "schema": "config-operational",
+      "sha256": "23a8e60fdfadb05b3890f0d8ae50122c1ed50c46ead674ebf7fbf0c0748cedff"
+    },
+    {
+      "file": "fixtures/config-lighting-lux.json",
+      "schema": "config-lighting-lux",
+      "sha256": "f647aa1260d4e6c28031382364374246760815a37b7c5426b0bba6ace34f1299"
+    },
+    {
+      "file": "fixtures/ack.json",
+      "schema": "ack",
+      "sha256": "68eed512aa3877860803252d06da8120feb8adf7f922e4c62d0e28fea2fa0958"
+    },
+    {
+      "file": "fixtures/report.json",
+      "schema": "report",
+      "sha256": "c65cc9289ae11852353ec58ed900459068de8db9031a2013db40ad8325330a45"
+    },
+    {
+      "file": "fixtures/session-proposal.json",
+      "schema": "session-proposal",
+      "sha256": "ab35699e15f67947d8492db1f1e76942457e7c3d092727c1a780542d15afe458"
+    },
+    {
+      "file": "fixtures/display.json",
+      "schema": "display",
+      "sha256": "3fe20ffa92425d908d420ad358b25a4fdab6eb6a3fa2f1c0409461702b140fb0"
+    }
+  ],
+  "schemas": {
+    "ack.json": "4f1038d6a0b0d4123e7d862c4d425d390b55566ac9715c5956014bb14b8ba769",
+    "config-lighting-lux.json": "2f60c7f55de5b70bfee3c59eff559f3584cb86581da352d13e523ca1a52de51f",
+    "config-operational.json": "18d998ca9cc0cb7d24073d6ecd645a34bbf89b73e0bec6cd53629fd4fb355124",
+    "display.json": "4438a368657de807bed5b6a4c0f76171ade21d229461d99526c63f3ff4d82ef5",
+    "report.json": "766f804dbb8c5727c15ca4621292510c530539e47f0e869c6ccb8a5d01a3c3d3",
+    "session-proposal.json": "86bdc883dae954117eb87c86bf9c92eecf58dc9697dfe956654b5515e19eac41",
+    "status.json": "566eaa675db7c60b010f8673c4143062940212538521b94cf740964d8c49c329",
+    "telemetry.json": "21b6491a3d9856e6eb10b411339189ace3dc657007e0bbca1497e3b5be130b1f"
+  },
+  "semantic_validators": [
+    "PayloadValidator",
+    "TelemetryIngestor",
+    "DeviceFeedback",
+    "VirtualDevice"
+  ],
+  "classification": {
+    "telemetry_v1": "NO_FIRMWARE_CHANGE",
+    "five_humidity_existing_phase8_1": "FIRMWARE_SYNC_REQUIRED",
+    "config_ack_report_existing_phase8_draft": "FIRMWARE_SYNC_REQUIRED",
+    "session_and_lcd_wire_proposal": "FIRMWARE_DECISION_REQUIRED",
+    "staging_transport_and_lock": "NO_FIRMWARE_CHANGE"
+  },
+  "legacy_adc": "Deprecated optional runtime-gated outdoor_light_adc is outside target fixture schema; production v1 parser compatibility retained.",
+  "topics": {
+    "telemetry": {
+      "suffix": "/telemetry",
+      "direction": "device_to_backend",
+      "boards": [
+        "esp32",
+        "nodemcu_esp8266"
+      ],
+      "qos": 1,
+      "retained": false,
+      "schema": "telemetry",
+      "state": "existing_v1"
+    },
+    "status": {
+      "suffix": "/status",
+      "direction": "device_to_backend",
+      "boards": [
+        "esp32",
+        "nodemcu_esp8266"
+      ],
+      "qos": 1,
+      "retained": false,
+      "schema": "status",
+      "state": "existing_v1"
+    },
+    "operational": {
+      "suffix": "/integration/v1/config/operational",
+      "direction": "backend_to_device",
+      "boards": [
+        "esp32",
+        "nodemcu_esp8266"
+      ],
+      "qos": 1,
+      "retained": "explicit_authorization_only",
+      "schema": "config-operational",
+      "state": "phase8_draft"
+    },
+    "lighting_lux": {
+      "suffix": "/integration/v1/config/lighting_lux",
+      "direction": "backend_to_device",
+      "boards": [
+        "esp32",
+        "nodemcu_esp8266"
+      ],
+      "qos": 1,
+      "retained": "explicit_authorization_only",
+      "schema": "config-lighting-lux",
+      "state": "phase8_draft"
+    },
+    "ack": {
+      "suffix": "/integration/v1/ack",
+      "direction": "device_to_backend",
+      "boards": [
+        "esp32",
+        "nodemcu_esp8266"
+      ],
+      "qos": 1,
+      "retained": false,
+      "schema": "ack",
+      "state": "phase8_internal_only"
+    },
+    "report": {
+      "suffix": "/integration/v1/report",
+      "direction": "device_to_backend",
+      "boards": [
+        "esp32"
+      ],
+      "qos": 1,
+      "retained": false,
+      "schema": "report",
+      "state": "phase8_internal_only"
+    },
+    "session": {
+      "suffix": "/integration/v1/session",
+      "direction": "device_to_backend",
+      "boards": [
+        "esp32",
+        "nodemcu_esp8266"
+      ],
+      "qos": 1,
+      "retained": false,
+      "schema": "session-proposal",
+      "state": "firmware_decision_required_no_receiver"
+    },
+    "display": {
+      "suffix": "/integration/v1/display",
+      "direction": "backend_to_device",
+      "boards": [
+        "nodemcu_esp8266"
+      ],
+      "qos": 1,
+      "retained": false,
+      "schema": "display",
+      "state": "firmware_decision_required_no_publisher"
+    }
+  }
+}

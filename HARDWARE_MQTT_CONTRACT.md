@@ -1,5 +1,7 @@
 # Hardware and MQTT handover
 
+> **SUPERSEDED — 25 November 2026.** Dokumen di bawah adalah arsip 10 November, bukan kontrak target untuk firmware baru. Gunakan [Phase 8.2 firmware contract](docs/firmware/POULTRIQ_FIRMWARE_CONTRACT_V1.md), [changelog wajib Arduino](docs/firmware/POULTRIQ_FIRMWARE_CHANGELOG.md), dan [handoff](POULTRIQ_PHASE8_2_FIRMWARE_HANDOFF.md). Contoh `type=nodemcu`, single indoor_humidity sebagai target, gas outdoor, minimum outdoor, mapping lama dan "jangan kirim unit" secara universal sudah obsolete. Target type `nodemcu_esp8266`, lima humidity DHT22, gas Indoor ADC, minimum/maksimum Indoor, BH1750 lux. Envelope/topic telemetry v1 tetap kompatibel; integration draft belum physical approval. Jangan menjalankan contoh legacy simulator local/mqtt di operational database/broker.
+
 Updated 10 November 2026. Flutter communicates only with Laravel REST. The existing Laravel subscriber validates and commits telemetry to MySQL automatically; no per-message manual SQL is required.
 
 ## Existing records and safe registration

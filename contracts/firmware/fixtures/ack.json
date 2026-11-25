@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "kind": "ack",
+  "message_id": "12345678-1234-4234-8234-123456789abd",
+  "coop_id": 1,
+  "device_identifier": "VIRTUAL_INDOOR",
+  "boot_id": "12345678-1234-4234-8234-123456789abc",
+  "sequence": 1,
+  "sent_at": "2026-11-25T08:00:00Z",
+  "configuration_message_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "domain": "operational",
+  "config_version": 1,
+  "payload_hash": "0b26e9205c600a9325ca01a89a788078df7b6918c0a2fbeb13d225b45934864c",
+  "status": "applied"
+}

@@ -1,0 +1,30 @@
+# Isolated VIRTUAL_* broker only. No production account and no command permissions.
+# Backend read permission on config is ONLY for the smoke-test observer.
+user virtual-backend
+topic readwrite smart-kandang/coops/1/devices/VIRTUAL_INDOOR/integration/v1/config/operational
+topic readwrite smart-kandang/coops/1/devices/VIRTUAL_INDOOR/integration/v1/config/lighting_lux
+topic readwrite smart-kandang/coops/1/devices/VIRTUAL_OUTDOOR/integration/v1/config/operational
+topic readwrite smart-kandang/coops/1/devices/VIRTUAL_OUTDOOR/integration/v1/config/lighting_lux
+topic read smart-kandang/coops/1/devices/VIRTUAL_INDOOR/telemetry
+topic read smart-kandang/coops/1/devices/VIRTUAL_INDOOR/status
+topic read smart-kandang/coops/1/devices/VIRTUAL_INDOOR/integration/v1/ack
+topic read smart-kandang/coops/1/devices/VIRTUAL_INDOOR/integration/v1/report
+topic read smart-kandang/coops/1/devices/VIRTUAL_OUTDOOR/telemetry
+topic read smart-kandang/coops/1/devices/VIRTUAL_OUTDOOR/status
+topic read smart-kandang/coops/1/devices/VIRTUAL_OUTDOOR/integration/v1/ack
+
+user virtual-indoor
+topic write smart-kandang/coops/1/devices/VIRTUAL_INDOOR/telemetry
+topic write smart-kandang/coops/1/devices/VIRTUAL_INDOOR/status
+topic write smart-kandang/coops/1/devices/VIRTUAL_INDOOR/integration/v1/ack
+topic write smart-kandang/coops/1/devices/VIRTUAL_INDOOR/integration/v1/report
+topic read smart-kandang/coops/1/devices/VIRTUAL_INDOOR/integration/v1/config/operational
+topic read smart-kandang/coops/1/devices/VIRTUAL_INDOOR/integration/v1/config/lighting_lux
+
+user virtual-outdoor
+topic write smart-kandang/coops/1/devices/VIRTUAL_OUTDOOR/telemetry
+topic write smart-kandang/coops/1/devices/VIRTUAL_OUTDOOR/status
+topic write smart-kandang/coops/1/devices/VIRTUAL_OUTDOOR/integration/v1/ack
+topic read smart-kandang/coops/1/devices/VIRTUAL_OUTDOOR/integration/v1/config/operational
+topic read smart-kandang/coops/1/devices/VIRTUAL_OUTDOOR/integration/v1/config/lighting_lux
+# Session/display ACLs intentionally absent until authenticated proposal acceptance.

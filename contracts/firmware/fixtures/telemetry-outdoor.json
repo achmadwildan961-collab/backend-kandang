@@ -1,0 +1,18 @@
+{
+  "message_id": "outdoor-sample-1",
+  "sent_at": "2026-11-25T08:00:00Z",
+  "readings": [
+    {
+      "sensor_identifier": "outdoor_temperature",
+      "value": 28
+    },
+    {
+      "sensor_identifier": "outdoor_humidity",
+      "value": 65
+    },
+    {
+      "sensor_identifier": "outdoor_light_lux",
+      "value": 120
+    }
+  ]
+}

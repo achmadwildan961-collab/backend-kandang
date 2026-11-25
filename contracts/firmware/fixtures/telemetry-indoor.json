@@ -1,0 +1,50 @@
+{
+  "message_id": "indoor-sample-1",
+  "sent_at": "2026-11-25T08:00:00Z",
+  "readings": [
+    {
+      "sensor_identifier": "indoor_dht22_1",
+      "value": 28
+    },
+    {
+      "sensor_identifier": "indoor_dht22_2",
+      "value": 28
+    },
+    {
+      "sensor_identifier": "indoor_dht22_3",
+      "value": 28
+    },
+    {
+      "sensor_identifier": "indoor_dht22_4",
+      "value": 28
+    },
+    {
+      "sensor_identifier": "indoor_dht22_5",
+      "value": 28
+    },
+    {
+      "sensor_identifier": "indoor_dht22_1_humidity",
+      "value": 65
+    },
+    {
+      "sensor_identifier": "indoor_dht22_2_humidity",
+      "value": 65
+    },
+    {
+      "sensor_identifier": "indoor_dht22_3_humidity",
+      "value": 65
+    },
+    {
+      "sensor_identifier": "indoor_dht22_4_humidity",
+      "value": 65
+    },
+    {
+      "sensor_identifier": "indoor_dht22_5_humidity",
+      "value": 65
+    },
+    {
+      "sensor_identifier": "gas_adc",
+      "value": 1000
+    }
+  ]
+}

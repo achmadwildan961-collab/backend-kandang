@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "kind": "report",
+  "message_id": "12345678-1234-4234-8234-123456789abd",
+  "coop_id": 1,
+  "device_identifier": "VIRTUAL_INDOOR",
+  "boot_id": "12345678-1234-4234-8234-123456789abc",
+  "sequence": 1,
+  "sent_at": "2026-11-25T08:00:00Z",
+  "states": {
+    "heating_lamp": null,
+    "ventilation_fan_1": null,
+    "ventilation_fan_2": null,
+    "lighting_lamp": null
+  },
+  "feedback_kind": "gpio"
+}

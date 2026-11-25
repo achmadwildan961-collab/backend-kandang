@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "contract": "phase8_draft",
+  "message_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "coop_id": 1,
+  "device_identifier": "VIRTUAL_INDOOR",
+  "domain": "lighting_lux",
+  "config_version": 1,
+  "settings": {
+    "lighting_mode": "auto",
+    "min_lux": 10,
+    "max_lux": 100,
+    "threshold_unit": "lux",
+    "measurement_version": "bh1750_lux_v1"
+  },
+  "generated_at": "2026-11-25T08:00:00Z",
+  "expires_at": "2026-11-25T09:00:00Z",
+  "payload_hash": "1d18e289a345ba8d619726e8fb7d5454958900359ac1f6684ddf8dd04782d2e6"
+}

@@ -1,5 +1,7 @@
 # POULTRIQ — AGENTS.md (Backend Laravel)
 
+> **Handoff Phase 8.2:** untuk kontrak firmware gunakan `docs/firmware/POULTRIQ_FIRMWARE_CONTRACT_V1.md`, changelog dan `contracts/firmware/contract-lock.json`. Kontrak v1 existing dipertahankan; session/display wire tetap staging proposal. Setiap perubahan device-facing wajib classification NO_FIRMWARE_CHANGE / FIRMWARE_SYNC_REQUIRED / FIRMWARE_DECISION_REQUIRED dan contoh before/after. Jangan bind adapter virtual loopback ke production dispatcher atau mengaktifkan physical commands.
+
 > **Status:** Spesifikasi arsitektur TARGET dari pemilik proyek, diperbarui 25 November 2026 (Phase 8.1 humidity). Pedoman ini menggantikan **asumsi lama yang bertentangan**, tetapi tidak berarti hardware/firmware sudah tervalidasi atau command MQTT sudah aktif.
 >
 > **Workspace:** `D:\FlutterProjects\smart-kandang-backend` — repository `achmadwildan961-collab/backend-kandang`.

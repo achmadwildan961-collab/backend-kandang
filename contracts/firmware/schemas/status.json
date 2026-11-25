@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Poultriq status",
+  "description": "STAGING PROPOSAL for integration; telemetry/status preserve existing v1. Semantic validation and current mapping additionally required.",
+  "type": "object",
+  "properties": {
+    "message_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,128}$"
+    },
+    "sent_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?Z$"
+    },
+    "status": {
+      "enum": [
+        "online",
+        "offline"
+      ]
+    }
+  },
+  "required": [
+    "message_id",
+    "sent_at",
+    "status"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "contract": "phase8_draft",
+  "coop_id": 1,
+  "generated_at": "2026-11-25T08:00:00Z",
+  "expires_at": "2026-11-25T08:00:30Z",
+  "target_device_ids": [
+    2
+  ],
+  "fields": {
+    "indoor_temperature": {
+      "value": null,
+      "unit": "celsius",
+      "status": "missing",
+      "recorded_at": null
+    },
+    "outdoor_temperature": {
+      "value": null,
+      "unit": "celsius",
+      "status": "missing",
+      "recorded_at": null
+    },
+    "indoor_humidity": {
+      "value": null,
+      "unit": "percent",
+      "status": "missing",
+      "recorded_at": null,
+      "unit_symbol": "%"
+    },
+    "outdoor_humidity": {
+      "value": null,
+      "unit": "percent",
+      "status": "missing",
+      "recorded_at": null,
+      "unit_symbol": "%"
+    },
+    "gas": {
+      "value": null,
+      "unit": "adc",
+      "status": "missing",
+      "recorded_at": null
+    },
+    "outdoor_light_lux": {
+      "value": null,
+      "unit": "lux",
+      "status": "missing",
+      "recorded_at": null
+    }
+  },
+  "actuators": [],
+  "display_geometry": null,
+  "publication_enabled": false
+}

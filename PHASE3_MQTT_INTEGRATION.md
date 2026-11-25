@@ -1,5 +1,7 @@
 # Phase 3: MQTT ingestion and local verification
 
+> **Historical verification only.** For current board/sensor mapping, five humidity channels, BH1750 lux and staging configuration/ACK/session handoff, use [Phase 8.2 firmware contract](docs/firmware/POULTRIQ_FIRMWARE_CONTRACT_V1.md). Earlier mixed-node simulator examples and hardware assumptions below are not a current firmware specification. MQTT v1 ingress compatibility is preserved; no permission to run historical examples against operational services is implied.
+
 The existing Laravel project now accepts sensor telemetry and heartbeats through a separate subscriber process. Flutter UI, ESP32 firmware, physical control and automation are unchanged. Remote VMs are being prepared by another team member on a different laptop. No remote broker connection is required for local development, and none was attempted after this clarification.
 
 ## Architecture and package

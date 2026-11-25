@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "kind": "session",
+  "message_id": "12345678-1234-4234-8234-123456789abd",
+  "coop_id": 1,
+  "device_identifier": "VIRTUAL_INDOOR",
+  "boot_id": "12345678-1234-4234-8234-123456789abc",
+  "sent_at": "2026-11-25T08:00:00Z"
+}

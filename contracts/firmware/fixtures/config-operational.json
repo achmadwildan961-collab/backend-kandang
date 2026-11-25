@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "contract": "phase8_draft",
+  "message_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "coop_id": 1,
+  "device_identifier": "VIRTUAL_INDOOR",
+  "domain": "operational",
+  "config_version": 1,
+  "settings": {
+    "minimum_indoor_temperature": 20,
+    "maximum_indoor_temperature": 30,
+    "gas_threshold": 1500,
+    "temperature_unit": "celsius",
+    "gas_unit": "adc"
+  },
+  "generated_at": "2026-11-25T08:00:00Z",
+  "expires_at": "2026-11-25T09:00:00Z",
+  "payload_hash": "0b26e9205c600a9325ca01a89a788078df7b6918c0a2fbeb13d225b45934864c"
+}

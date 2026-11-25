@@ -1,0 +1,348 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Poultriq telemetry",
+  "description": "STAGING PROPOSAL for integration; telemetry/status preserve existing v1. Semantic validation and current mapping additionally required.",
+  "type": "object",
+  "properties": {
+    "message_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,128}$"
+    },
+    "sent_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?Z$"
+    },
+    "readings": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "sensor_identifier": {
+                "const": "indoor_dht22_1"
+              },
+              "value": {
+                "type": "number",
+                "minimum": -40,
+                "maximum": 80
+              }
+            },
+            "required": [
+              "sensor_identifier",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sensor_identifier": {
+                "const": "indoor_dht22_2"
+              },
+              "value": {
+                "type": "number",
+                "minimum": -40,
+                "maximum": 80
+              }
+            },
+            "required": [
+              "sensor_identifier",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sensor_identifier": {
+                "const": "indoor_dht22_3"
+              },
+              "value": {
+                "type": "number",
+                "minimum": -40,
+                "maximum": 80
+              }
+            },
+            "required": [
+              "sensor_identifier",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sensor_identifier": {
+                "const": "indoor_dht22_4"
+              },
+              "value": {
+                "type": "number",
+                "minimum": -40,
+                "maximum": 80
+              }
+            },
+            "required": [
+              "sensor_identifier",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sensor_identifier": {
+                "const": "indoor_dht22_5"
+              },
+              "value": {
+                "type": "number",
+                "minimum": -40,
+                "maximum": 80
+              }
+            },
+            "required": [
+              "sensor_identifier",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sensor_identifier": {
+                "const": "indoor_dht22_1_humidity"
+              },
+              "value": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "unit": {
+                "enum": [
+                  "percent",
+                  "%"
+                ]
+              }
+            },
+            "required": [
+              "sensor_identifier",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sensor_identifier": {
+                "const": "indoor_dht22_2_humidity"
+              },
+              "value": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "unit": {
+                "enum": [
+                  "percent",
+                  "%"
+                ]
+              }
+            },
+            "required": [
+              "sensor_identifier",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sensor_identifier": {
+                "const": "indoor_dht22_3_humidity"
+              },
+              "value": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "unit": {
+                "enum": [
+                  "percent",
+                  "%"
+                ]
+              }
+            },
+            "required": [
+              "sensor_identifier",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sensor_identifier": {
+                "const": "indoor_dht22_4_humidity"
+              },
+              "value": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "unit": {
+                "enum": [
+                  "percent",
+                  "%"
+                ]
+              }
+            },
+            "required": [
+              "sensor_identifier",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sensor_identifier": {
+                "const": "indoor_dht22_5_humidity"
+              },
+              "value": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "unit": {
+                "enum": [
+                  "percent",
+                  "%"
+                ]
+              }
+            },
+            "required": [
+              "sensor_identifier",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sensor_identifier": {
+                "const": "outdoor_temperature"
+              },
+              "value": {
+                "type": "number",
+                "minimum": -40,
+                "maximum": 80
+              }
+            },
+            "required": [
+              "sensor_identifier",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sensor_identifier": {
+                "const": "indoor_humidity"
+              },
+              "value": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "unit": {
+                "enum": [
+                  "percent",
+                  "%"
+                ]
+              }
+            },
+            "required": [
+              "sensor_identifier",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sensor_identifier": {
+                "const": "outdoor_humidity"
+              },
+              "value": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "unit": {
+                "enum": [
+                  "percent",
+                  "%"
+                ]
+              }
+            },
+            "required": [
+              "sensor_identifier",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sensor_identifier": {
+                "const": "gas_adc"
+              },
+              "value": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 4095
+              }
+            },
+            "required": [
+              "sensor_identifier",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sensor_identifier": {
+                "const": "outdoor_light_lux"
+              },
+              "value": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 65535
+              },
+              "unit": {
+                "enum": [
+                  "lux"
+                ]
+              }
+            },
+            "required": [
+              "sensor_identifier",
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "minItems": 1,
+      "maxItems": 16
+    }
+  },
+  "required": [
+    "message_id",
+    "sent_at",
+    "readings"
+  ],
+  "additionalProperties": false
+}
