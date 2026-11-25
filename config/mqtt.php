@@ -8,7 +8,8 @@ return [
     'password' => env('MQTT_PASSWORD'),
     'client_id' => env('MQTT_CLIENT_ID', 'smart-kandang-laravel'),
     'topic_prefix' => env('MQTT_TOPIC_PREFIX', 'smart-kandang'),
-    // Optional explicit identifier -> sensor allowlists. Empty preserves legacy devices.
+    // Explicit registered identifier -> sensor allowlists. Empty preserves legacy
+    // channels, but never authorizes new five-DHT22 humidity channels or AHT20 provenance.
     'device_sensors' => json_decode(env('MQTT_DEVICE_SENSORS', '{}'), true),
     'tls' => (bool) env('MQTT_TLS', false),
     'tls_ca_file' => env('MQTT_TLS_CA_FILE'),

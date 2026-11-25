@@ -5,6 +5,7 @@ namespace App\Services\Mqtt;
 use App\Models\Coop;
 use App\Models\Device;
 use App\Services\AlertEvaluationService;
+use App\Services\HumidityContract;
 use App\Services\LightingContract;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -52,6 +53,13 @@ class TelemetryIngestor
             if ($kind === 'telemetry') {
                 foreach ($data['readings'] as &$reading) {
                     $reading['measurement_version'] = null;
+                    $sensorId = $reading['sensor_identifier'];
+                    if (in_array($sensorId, HumidityContract::indoorIdentifiers(), true) && ! HumidityContract::accepts($locked, $sensorId)) {
+                        throw new InvalidArgumentException('DHT22 humidity is not explicitly assigned to this registered Indoor ESP32.');
+                    }
+                    if (HumidityContract::accepts($locked, $sensorId)) {
+                        $reading['measurement_version'] = HumidityContract::version($sensorId);
+                    }
                     if ($reading['sensor_identifier'] === 'outdoor_light_lux') {
                         if (! LightingContract::acceptsBh1750($locked)) {
                             throw new InvalidArgumentException('BH1750 lux is not assigned to this verified Outdoor NodeMCU.');

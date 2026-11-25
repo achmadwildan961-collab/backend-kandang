@@ -15,6 +15,9 @@ class SensorCatalog
         foreach (self::indoorIdentifiers() as $id) {
             $items[$id] = ['sensor_identifier' => $id, 'sensor_type' => 'indoor_temperature', 'unit' => 'celsius', 'min' => -40, 'max' => 80];
         }
+        foreach (HumidityContract::indoorIdentifiers() as $id) {
+            $items[$id] = ['sensor_identifier' => $id, 'sensor_type' => 'indoor_humidity', 'unit' => 'percent', 'min' => 0, 'max' => 100, 'sensor_model' => 'DHT22'];
+        }
         foreach ([
             'outdoor_temperature' => ['outdoor_temperature', 'celsius', -40, 80],
             'indoor_humidity' => ['indoor_humidity', 'percent', 0, 100],

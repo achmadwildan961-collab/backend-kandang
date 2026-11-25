@@ -1,6 +1,6 @@
 # POULTRIQ — AGENTS.md (Backend Laravel)
 
-> **Status:** Spesifikasi arsitektur TARGET terbaru dari pemilik proyek, 24 November 2026. Pedoman ini menggantikan **asumsi lama yang bertentangan**, tetapi tidak berarti hardware/firmware sudah tervalidasi atau command MQTT sudah aktif.
+> **Status:** Spesifikasi arsitektur TARGET dari pemilik proyek, diperbarui 25 November 2026 (Phase 8.1 humidity). Pedoman ini menggantikan **asumsi lama yang bertentangan**, tetapi tidak berarti hardware/firmware sudah tervalidasi atau command MQTT sudah aktif.
 >
 > **Workspace:** `D:\FlutterProjects\smart-kandang-backend` — repository `achmadwildan961-collab/backend-kandang`.
 >
@@ -35,12 +35,14 @@ Jangan membalik board. GPIO output aktual, active polarity, relay interlock, LCD
 - **`min_temp` dan `max_temp` keduanya batas suhu INDOOR**, berdasarkan rata-rata valid DHT22 indoor.
 - **Outdoor AHT20 (`temp_out`) hanya parameter referensi/grafik ΔT**, bukan batas alarm/kontrol pemanas/kipas.
 - Target `delta_temp = avg_temp_indoor - temp_outdoor`, hanya dengan sample valid, fresh, sebanding waktu; gunakan null/partial metadata bila syarat tidak terpenuhi.
-- **CURRENT LEGACY (terverifikasi pada backend `dev`):** `SettingsController`, `CoopSetting`, validation/resource/alert berkaitan dengan `minimum_outdoor_temperature` dan `maximum_indoor_temperature`. Endpoint update sudah tersedia dan berfungsi untuk **kontrak lama**, bukan implementasi `min_temp` indoor.
+- **HISTORIS sebelum Phase 7 (backend `dev` lama):** `SettingsController`, `CoopSetting`, validation/resource/alert memakai `minimum_outdoor_temperature` dan `maximum_indoor_temperature`. Phase 7 sudah menambahkan minimum indoor nullable, version/CAS dan memensiunkan rule minimum outdoor; lihat laporan Phase 7. Jangan mengulang migrasi atau menghidupkan rule outdoor historis.
 - **Wajib rencana migrasi terkoordinasi**: definisi kolom/field baru, versioning kontrak, aturan backfill tanpa mengartikan ulang nilai minimum outdoor sebagai indoor, kompatibilitas klien, migration/rollback-safe, validasi `min_temp < max_temp`, tes. Jangan rename field/kolom lama tanpa migrasi dan keputusan pemetaan data lama.
 
 ### 3.2 Lima DHT22 dan agregasi
 
-- ESP32 Indoor mengirim lima pembacaan DHT22 (suhu dan, bila didukung, kelembapan). Backend menjadi sumber resmi agregasi dan freshness.
+- **Kontrak resmi Phase 8.1, 25 November 2026:** ESP32 Indoor memiliki lima DHT22, masing-masing mengukur suhu dan kelembapan relatif. Temperatur indoor resmi adalah rata-rata lima temperatur valid; humidity indoor resmi adalah rata-rata lima humidity valid dalam unit `%` (wire/storage canonical `percent`). Outdoor AHT20 memiliki temperatur dan humidity tersendiri; jangan pernah merata-ratakan humidity indoor dan outdoor bersama.
+- Identifier suhu existing `indoor_dht22_1` sampai `indoor_dht22_5`; pasangan humidity `indoor_dht22_1_humidity` sampai `indoor_dht22_5_humidity`. Lima nilai humidity harus finite 0–100, fresh, exact timestamp, single registered ESP32, single MQTT message batch. Batch suhu lengkap tidak membuktikan humidity lengkap. Partial hanya diagnostik; jangan gabung antar-batch, jangan substitusi kanal `indoor_humidity` legacy sebagai average lima sensor.
+- Kanal humidity baru wajib explicit `mqtt.device_sensors` allowlist. Outdoor AHT20 verified memerlukan explicit allowlist sensor + NodeMCU dan measurement provenance saat ingest; label board saja bukan bukti AHT20. Empty legacy mapping tidak boleh memberi provenance baru secara retroaktif. Physical mapping tetap perlu acceptance hardware.
 - Tolak/saring `null`, `NaN`, infinite, sensor invalid, timestamp salah, duplicate, stale, missing, dan out-of-order sesuai kontrak ingest yang berlaku.
 - **Existing behavior:** rata-rata indoor yang terverifikasi memerlukan lima nilai fresh valid dalam batch bertimestamp sama. Pertahankan fail-safe ini untuk kontrol sampai ada keputusan tertulis soal partial readings; data partial boleh ditandai untuk tampilan, bukan dipakai diam-diam untuk heater/fan.
 - Penyediaan `temp_avg`/`hum_avg` dari firmware tidak boleh otomatis menggantikan agregasi yang diaudit server; validasi consistency dan sensor cardinality.
@@ -129,7 +131,7 @@ Contoh payload **ILUSTRATIF (bukan bukti sensor atau angka aman):**
 - Ada schema_version, config_version/sequence, message_id/idempotency, timestamps, expiry untuk command, measurement_version/calibration_version/unit, device/boot identity, freshness, serta validation/ACL/TLS.
 - `lux` adalah unit target BH1750; verifikasi firmware/pengukurannya. `gas_ppm` masih target setelah kalibrasi MQ135, sementara gas saat ini ADC. **LEGACY/DEPRECATED** light ADC harus tetap terpisah dari lux.
 - Pertahankan migrasi kompatibel dari **CURRENT MQTT v1** (prefix `smart-kandang`, topic `/coops/+/devices/+/{telemetry|status}`, envelope `message_id/sent_at/readings`, dedup/retained rejection). Jangan mengganti subscriber dengan parser contoh baru secara mendadak.
-- Tentukan bentuk payload kelembapan lima sensor DHT22; contoh `dht` hanya berisi temperatur, sedangkan `hum_avg` memerlukan bukti pembacaan humidity.
+- Bentuk software kelembapan lima DHT22 telah ditetapkan pada Phase 8.1: gunakan lima identifier humidity di envelope `readings` MQTT v1, bukan nilai `hum_avg` yang dikirim firmware tanpa lima pembacaan. Firmware implementation/timing/pin mapping masih perlu acceptance.
 
 ## 6. Baseline historis `dev` sebelum Phase 7 (LEGACY)
 
@@ -151,7 +153,11 @@ Contoh payload **ILUSTRATIF (bukan bukti sensor atau angka aman):**
 7. ACK/report/physical feedback, retained config validity, command expiry/replay control, time sync, session/boot identity.
 8. LCD I2C size/address dan payload display khusus status unavailable/stale.
 9. Push notification provider, mobile device token, delivery evidence dan escalation.
-10. Migration plan API/DB current outdoor-min → target indoor-min; domain versioning; nilai legacy lama tidak bisa diartikan ulang otomatis.
+10. Acceptance integrasi Flutter/firmware atas migration API/DB minimum indoor dan domain versioning yang sudah diimplementasikan Phase 7; nilai legacy lama tidak bisa diartikan ulang otomatis.
+
+### Status software Phase 8.1
+
+Backend sudah memiliki minimum indoor/versioning (Phase 7), BH1750 lux dan lighting schema 2, serta outbox/retry/ACK/control/LCD/push fake foundations (Phase 8). Phase 8.1 menambah lima humidity channels dan monitoring schema 2: GET latest/chart/export dengan `schema_version=2`. Default schema 1 mempertahankan single humidity legacy; jangan memindahkan artinya diam-diam. Chart/CSV memakai complete-batch aggregate sebelum bucket. Tidak ada migration baru untuk humidity; gunakan kolom batch_key/measurement_version existing tanpa backfill. Baca laporan/checkpoint Phase 8.1 untuk field names, hasil tes aktual, dan remaining dependencies. Kontrak MQTT v1 tetap; seluruh physical/push/config publication tetap disabled.
 
 ## 8. Urutan audit & migrasi yang dianjurkan
 

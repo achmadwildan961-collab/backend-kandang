@@ -13,7 +13,7 @@ class SensorAggregationService
         $cutoff = $now->subSeconds(max(1, config('monitoring.stale_after_seconds')));
         $series = [];
         foreach (SensorCatalog::series() as $key => $spec) {
-            if ($key === 'outdoor_light_lux') {
+            if ($key === 'outdoor_light_lux' || in_array($key, HumidityContract::indoorIdentifiers(), true)) {
                 continue; // BH1750 has mandatory source-binding and measurement-version validation below.
             }
             $query = $coop->readings()->where('sensor_identifier', $spec['sensor_identifier'])->where('sensor_type', $spec['sensor_type']);
@@ -67,6 +67,13 @@ class SensorAggregationService
 
         $snapshot['temperature_comparison'] = (new TemperatureComparison)->compare($snapshot['indoor_temperature'], $snapshot['outdoor_temperature']);
         $snapshot['outdoor_light_lux'] = (new Bh1750Telemetry)->latest($coop);
+        $snapshot['indoor_humidity']['legacy'] = true;
+        $snapshot['indoor_humidity']['unit_symbol'] = '%';
+        $snapshot['indoor_humidity_aggregate'] = app(HumidityAggregation::class)->indoor($coop);
+        $snapshot['outdoor_humidity_verified'] = app(HumidityAggregation::class)->channel($coop, 'outdoor_humidity');
+        $snapshot['outdoor_temperature_verified'] = app(HumidityAggregation::class)->channel($coop, 'outdoor_temperature');
+        $snapshot['outdoor_humidity']['source_verified'] = $snapshot['outdoor_humidity_verified']['source_verified'];
+        $snapshot['outdoor_humidity']['sensor_model'] = $snapshot['outdoor_humidity_verified']['sensor_model'];
 
         return $snapshot;
     }

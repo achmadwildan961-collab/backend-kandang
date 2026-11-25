@@ -2,6 +2,7 @@
 
 namespace App\Services\Mqtt;
 
+use App\Services\HumidityContract;
 use App\Services\SensorCatalog;
 use Carbon\CarbonImmutable;
 use InvalidArgumentException;
@@ -60,10 +61,12 @@ class PayloadValidator
                 throw new InvalidArgumentException('Invalid reading fields.');
             }
             $id = $reading['sensor_identifier'];
-            // V1 still infers canonical units. BH1750 alone also permits an explicit
-            // lux tag; wrong units and arbitrary metadata cannot be normalized away.
-            $fields = $id === 'outdoor_light_lux' ? ['sensor_identifier', 'value', 'unit'] : ['sensor_identifier', 'value'];
-            if (array_diff(array_keys($reading), $fields) || (array_key_exists('unit', $reading) && $reading['unit'] !== 'lux')) {
+            // V1 still infers canonical units. Explicit humidity tags are additive;
+            // percent and % both denote RH, never an ADC or fractional conversion.
+            $humidity = is_string($id) && in_array($id, [...HumidityContract::indoorIdentifiers(), 'indoor_humidity', 'outdoor_humidity'], true);
+            $fields = $id === 'outdoor_light_lux' || $humidity ? ['sensor_identifier', 'value', 'unit'] : ['sensor_identifier', 'value'];
+            $units = $humidity ? ['percent', '%'] : ['lux'];
+            if (array_diff(array_keys($reading), $fields) || (array_key_exists('unit', $reading) && ! in_array($reading['unit'], $units, true))) {
                 throw new InvalidArgumentException('Invalid reading fields or unit.');
             }
             $spec = is_string($id) ? (SensorCatalog::series()[$id] ?? null) : null;

@@ -3,13 +3,14 @@
 namespace App\Services\Integration;
 
 use App\Models\Coop;
+use App\Services\MonitoringContract;
 use App\Services\SensorAggregationService;
 
 class LcdPayload
 {
     public function generate(Coop $coop): array
     {
-        $s = app(SensorAggregationService::class)->latest($coop);
+        $s = app(MonitoringContract::class)->snapshot($coop, app(SensorAggregationService::class)->latest($coop), 2);
         $fields = [];
         foreach (['outdoor_temperature', 'gas', 'outdoor_light_lux'] as $key) {
             $reading = $s[$key];
@@ -19,6 +20,12 @@ class LcdPayload
         $fields['indoor_temperature'] = ['value' => $s['indoor_temperature']['complete'] ? $s['indoor_temperature']['average'] : null,
             'unit' => 'celsius', 'status' => $s['indoor_temperature']['complete'] ? 'fresh' : 'unavailable',
             'recorded_at' => $s['indoor_temperature']['recorded_at']];
+        $humidity = $s['indoor_humidity_aggregate'];
+        $fields['indoor_humidity'] = ['value' => $humidity['average'], 'unit' => 'percent', 'unit_symbol' => '%',
+            'status' => $humidity['status'], 'recorded_at' => $humidity['recorded_at']];
+        $outdoorHumidity = $s['outdoor_humidity_verified'];
+        $fields['outdoor_humidity'] = ['value' => $outdoorHumidity['value'], 'unit' => 'percent', 'unit_symbol' => '%',
+            'status' => $outdoorHumidity['status'], 'recorded_at' => $outdoorHumidity['recorded_at']];
 
         return ['schema_version' => 1, 'contract' => 'phase8_draft', 'coop_id' => $coop->id,
             'generated_at' => now()->toISOString(), 'expires_at' => now()->addSeconds(max(1, config('integration.display_seconds')))->toISOString(),
