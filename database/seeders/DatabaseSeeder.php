@@ -31,8 +31,10 @@ class DatabaseSeeder extends Seeder
             $coop = Coop::firstOrCreate(['name' => 'Kandang Utama'], ['location' => 'Bandung', 'description' => 'Local development coop']);
             $coop->users()->syncWithoutDetaching([$user->id]);
             $coop->settings()->firstOrCreate([], ['notification_preferences' => config('monitoring.notification_preferences')]);
-            $a = $coop->devices()->firstOrCreate(['device_identifier' => 'ESP32_DEVICE_A'], ['name' => 'ESP32 Device A', 'type' => 'esp32', 'connection_status' => 'online', 'last_seen_at' => now()]);
-            $b = $coop->devices()->firstOrCreate(['device_identifier' => 'ESP32_DEVICE_B'], ['name' => 'ESP32 Device B', 'type' => 'esp32', 'connection_status' => 'online', 'last_seen_at' => now()]);
+            // Legacy development IDs stay stable. Defaults apply only on creation;
+            // existing registrations are never relabelled as verified physical boards.
+            $a = $coop->devices()->firstOrCreate(['device_identifier' => 'ESP32_DEVICE_A'], ['name' => 'Indoor ESP32 DevKit (development)', 'type' => 'esp32', 'connection_status' => 'online', 'last_seen_at' => now()]);
+            $b = $coop->devices()->firstOrCreate(['device_identifier' => 'ESP32_DEVICE_B'], ['name' => 'Outdoor NodeMCU ESP8266 (development)', 'type' => 'nodemcu_esp8266', 'connection_status' => 'online', 'last_seen_at' => now()]);
             if ($coop->readings()->exists()) {
                 return;
             } // Reruns preserve existing readings and history.
@@ -41,8 +43,11 @@ class DatabaseSeeder extends Seeder
             $append = function ($time, array $temperatures, float $outdoor, float $humidity, int $gas) use (&$rows, $coop, $a, $b) {
                 $values = array_combine(SensorCatalog::indoorIdentifiers(), $temperatures) + ['outdoor_temperature' => $outdoor, 'indoor_humidity' => $humidity, 'outdoor_humidity' => 68, 'gas_adc' => $gas];
                 foreach (SensorCatalog::series() as $id => $spec) {
+                    if (! array_key_exists($id, $values)) {
+                        continue; // Do not fabricate BH1750 (or legacy light) measurements.
+                    }
                     $rows[] = [
-                        'coop_id' => $coop->id, 'device_id' => in_array($id, SensorCatalog::indoorIdentifiers()) || $id === 'indoor_humidity' ? $a->id : $b->id,
+                        'coop_id' => $coop->id, 'device_id' => in_array($id, SensorCatalog::indoorIdentifiers()) || in_array($id, ['indoor_humidity', 'gas_adc'], true) ? $a->id : $b->id,
                         'sensor_identifier' => $id, 'sensor_type' => $spec['sensor_type'], 'value' => $values[$id], 'unit' => $spec['unit'], 'recorded_at' => $time,
                     ];
                 }

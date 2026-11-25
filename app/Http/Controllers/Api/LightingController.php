@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Coop;
+use App\Services\Bh1750Telemetry;
 use App\Services\LightingContract;
+use App\Services\LuxLightingSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,9 +19,22 @@ class LightingController extends Controller
         return LightingContract::verified() && $coop->devices()->whereIn('device_identifier', config('lighting.device_identifiers'))->exists();
     }
 
-    public function show(Coop $coop)
+    public function show(Request $request, Coop $coop, LuxLightingSettings $lux, Bh1750Telemetry $telemetry)
     {
         Gate::authorize('view', $coop);
+        $request->validate(['schema_version' => ['sometimes', 'integer', 'in:1,2']]);
+        if ($request->integer('schema_version', 1) === 2) {
+            return response()->json(['data' => [
+                'schema_version' => 2, 'coop_id' => $coop->id,
+                'capabilities' => ['telemetry' => LightingContract::bh1750Devices($coop)->exists(),
+                    'configuration' => false, 'configuration_storage' => true, 'commands' => false],
+                'measurement' => $telemetry->latest($coop), 'settings' => $lux->snapshot($coop),
+                'actuator' => ['identifier' => 'lighting_lamp', 'desired_state' => null, 'reported_state' => null,
+                    'reported_at' => null, 'feedback_kind' => 'unknown', 'device_id' => null],
+                'command' => null, 'stale_after_seconds' => config('lighting.stale_after_seconds'),
+                'unavailable_reason' => 'firmware_and_feedback_unverified',
+            ]]);
+        }
         $supported = $this->supported($coop);
         $reading = $supported ? $coop->readings()
             ->where('sensor_identifier', 'outdoor_light_adc')->where('sensor_type', 'outdoor_light')->where('unit', 'adc')
@@ -30,10 +45,10 @@ class LightingController extends Controller
         $fresh = $reading && $reading->recorded_at->gte(now()->subSeconds(config('lighting.stale_after_seconds')));
 
         return response()->json(['data' => [
-            'schema_version' => 1, 'coop_id' => $coop->id,
+            'schema_version' => 1, 'deprecated' => true, 'replacement_schema_version' => 2, 'coop_id' => $coop->id,
             'capabilities' => ['telemetry' => $supported, 'configuration' => false, 'configuration_storage' => $supported && LightingContract::storesConfiguration(), 'commands' => false],
             'measurement' => ['sensor_identifier' => 'outdoor_light_adc', 'value' => $reading ? (float) $reading->value : null,
-                'unit' => 'adc', 'status' => ! $supported ? 'unsupported' : (! $reading ? 'missing' : ($fresh ? 'fresh' : 'stale')),
+                'unit' => 'adc', 'legacy' => true, 'status' => ! $supported ? 'unsupported' : (! $reading ? 'missing' : ($fresh ? 'fresh' : 'stale')),
                 'recorded_at' => $reading?->recorded_at->toISOString(), 'calibrated' => false,
                 'measurement_version' => $reading?->measurement_version, 'calibration_version' => null],
             'settings' => $this->settings($coop),
@@ -57,9 +72,13 @@ class LightingController extends Controller
             'updated_by' => $row->updated_by, 'delivery_status' => 'blocked'];
     }
 
-    public function update(Request $request, Coop $coop)
+    public function update(Request $request, Coop $coop, LuxLightingSettings $lux)
     {
         Gate::authorize('updateSettings', $coop);
+        $request->validate(['schema_version' => ['sometimes', 'integer', 'in:1,2']]);
+        if ($request->integer('schema_version', 1) === 2) {
+            return $lux->update($request, $coop);
+        }
         abort_unless($this->supported($coop) && LightingContract::storesConfiguration(), 409, 'Lighting configuration storage is unsupported.');
         $data = $request->validate([
             'lighting_mode' => ['required', 'in:automatic,manual'],
@@ -71,7 +90,7 @@ class LightingController extends Controller
             'expected_config_version' => ['required', 'integer', 'min:0', 'max:4294967294'],
         ]);
         // Reject unsupported fields instead of silently accepting a desired output.
-        abort_if(array_diff(array_keys($request->all()), array_keys($data)) !== [], 422, 'Unknown lighting setting fields.');
+        abort_if(array_diff(array_keys($request->all()), [...array_keys($data), 'schema_version']) !== [], 422, 'Unknown lighting setting fields.');
 
         return DB::transaction(function () use ($coop, $data, $request) {
             Coop::whereKey($coop->id)->lockForUpdate()->firstOrFail();

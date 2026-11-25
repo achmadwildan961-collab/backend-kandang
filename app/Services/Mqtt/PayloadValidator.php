@@ -56,10 +56,16 @@ class PayloadValidator
         }
         $seen = [];
         foreach ($data['readings'] as &$reading) {
-            if (! is_array($reading) || count($reading) !== 2 || ! isset($reading['sensor_identifier'], $reading['value'])) {
+            if (! is_array($reading) || ! isset($reading['sensor_identifier'], $reading['value'])) {
                 throw new InvalidArgumentException('Invalid reading fields.');
             }
             $id = $reading['sensor_identifier'];
+            // V1 still infers canonical units. BH1750 alone also permits an explicit
+            // lux tag; wrong units and arbitrary metadata cannot be normalized away.
+            $fields = $id === 'outdoor_light_lux' ? ['sensor_identifier', 'value', 'unit'] : ['sensor_identifier', 'value'];
+            if (array_diff(array_keys($reading), $fields) || (array_key_exists('unit', $reading) && $reading['unit'] !== 'lux')) {
+                throw new InvalidArgumentException('Invalid reading fields or unit.');
+            }
             $spec = is_string($id) ? (SensorCatalog::series()[$id] ?? null) : null;
             $value = $reading['value'];
             if (! $spec || isset($seen[$id]) || (! is_int($value) && ! is_float($value)) || ! is_finite((float) $value) || $value < $spec['min'] || $value > $spec['max']) {

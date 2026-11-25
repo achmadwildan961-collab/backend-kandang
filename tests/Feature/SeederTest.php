@@ -19,6 +19,11 @@ class SeederTest extends ApiTestCase
         $this->assertSame(30.38, $data['indoor_temperature']['average']);
         $this->assertTrue($data['indoor_temperature']['complete']);
         $this->assertSame(2, $this->coop->devices()->count());
+        $outdoor = $this->coop->devices()->where('device_identifier', 'ESP32_DEVICE_B')->firstOrFail();
+        $this->assertSame('nodemcu_esp8266', $outdoor->type);
+        $this->assertSame('ESP32 Device A', $this->device->fresh()->name); // Existing registration preserved.
+        $this->assertSame([$this->device->id], $this->coop->readings()->where('sensor_identifier', 'gas_adc')->distinct()->pluck('device_id')->all());
+        $this->assertSame([$outdoor->id], $this->coop->readings()->where('sensor_identifier', 'outdoor_temperature')->distinct()->pluck('device_id')->all());
         $this->assertTrue($this->coop->users()->where('email', 'seed-user@example.com')->exists());
         $counts = [SensorReading::count(), SystemEvent::count(), User::count()];
         $this->seed(DatabaseSeeder::class);

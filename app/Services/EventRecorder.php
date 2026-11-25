@@ -14,7 +14,7 @@ class EventRecorder
         $preferences = $coop->settings()->firstOrFail()->notification_preferences;
         $source = $metadata['source'] ?? 'configuration';
         $visible = ($preferences['push_notifications'] ?? true) && match ($source) {
-            'indoor','outdoor' => ($preferences['critical_alerts'] ?? true) && ($preferences['temperature_alerts'] ?? true),
+            'indoor','indoor_low','outdoor' => ($preferences['critical_alerts'] ?? true) && ($preferences['temperature_alerts'] ?? true),
             'gas' => ($preferences['critical_alerts'] ?? true) && ($preferences['gas_alerts'] ?? true),
             'configuration' => $preferences['maintenance_alerts'] ?? false,
             default => true,

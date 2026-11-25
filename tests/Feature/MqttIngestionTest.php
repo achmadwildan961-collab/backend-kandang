@@ -217,17 +217,17 @@ class MqttIngestionTest extends ApiTestCase
         $this->ingest($this->payload('warning-1', values: $values));
         $this->travel(1)->seconds();
         $this->ingest($this->payload('warning-2', values: $values));
-        $this->assertDatabaseCount('system_events', 3);
-        $this->assertDatabaseCount('notifications', 6);
+        $this->assertDatabaseCount('system_events', 2);
+        $this->assertDatabaseCount('notifications', 4);
         $this->travel(1)->seconds();
         $this->ingest($this->payload('normal', values: array_fill_keys(SensorCatalog::indoorIdentifiers(), 28) + ['outdoor_temperature' => 28, 'gas_adc' => 1000]));
-        $this->assertSame(3, SystemEvent::where('event_type', 'sensor_recovered')->count());
+        $this->assertSame(2, SystemEvent::where('event_type', 'sensor_recovered')->count());
         $this->coop->settings()->update(['notification_preferences' => ['push_notifications' => false]]);
         $count = Notification::count();
         $this->travel(1)->seconds();
         $this->ingest($this->payload('warning-3', values: $values));
         $this->assertSame($count, Notification::count());
-        $this->assertDatabaseCount('system_events', 9);
+        $this->assertDatabaseCount('system_events', 6);
     }
 
     public function test_heartbeat_offline_and_recovery_events_are_deduplicated(): void

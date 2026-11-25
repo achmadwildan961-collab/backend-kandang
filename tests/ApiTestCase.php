@@ -65,6 +65,6 @@ abstract class ApiTestCase extends TestCase
 
     protected function settings(array $overrides = []): array
     {
-        return array_merge(['minimum_outdoor_temperature' => 25, 'maximum_indoor_temperature' => 30, 'gas_threshold' => 1500], $overrides);
+        return array_merge(['expected_config_version' => $this->coop->settings()->first()->config_version, 'minimum_outdoor_temperature' => 25, 'maximum_indoor_temperature' => 30, 'gas_threshold' => 1500], $overrides);
     }
 }

@@ -52,6 +52,12 @@ class TelemetryIngestor
             if ($kind === 'telemetry') {
                 foreach ($data['readings'] as &$reading) {
                     $reading['measurement_version'] = null;
+                    if ($reading['sensor_identifier'] === 'outdoor_light_lux') {
+                        if (! LightingContract::acceptsBh1750($locked)) {
+                            throw new InvalidArgumentException('BH1750 lux is not assigned to this verified Outdoor NodeMCU.');
+                        }
+                        $reading['measurement_version'] = LightingContract::BH1750_MEASUREMENT_VERSION;
+                    }
                     if ($reading['sensor_identifier'] === 'outdoor_light_adc') {
                         if (! LightingContract::accepts($locked)) {
                             throw new InvalidArgumentException('LDR is not assigned to this verified device.');
@@ -61,11 +67,11 @@ class TelemetryIngestor
                 }
                 unset($reading);
                 $timestamp = $data['sent_at']->format('Y-m-d H:i:s.u');
-                // Never overwrite an existing sample or silently accept partial batches.
+                // Partial batches are diagnostic; never overwrite an existing sample.
                 if ($coop->readings()->where('recorded_at', $timestamp)->whereIn('sensor_identifier', array_column($data['readings'], 'sensor_identifier'))->exists()) {
                     throw new InvalidArgumentException('Sensor timestamp already exists.');
                 }
-                $rows = array_map(fn ($r) => $r + ['device_id' => $locked->id, 'coop_id' => $coop->id, 'recorded_at' => $timestamp], $data['readings']);
+                $rows = array_map(fn ($r) => $r + ['device_id' => $locked->id, 'coop_id' => $coop->id, 'recorded_at' => $timestamp, 'batch_key' => $key], $data['readings']);
                 DB::table('sensor_readings')->insert($rows);
             }
             $previousSent = DB::table('mqtt_receipts')->where('device_id', $locked->id)->max('sent_at');

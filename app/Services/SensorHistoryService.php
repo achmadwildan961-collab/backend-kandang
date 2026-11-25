@@ -25,16 +25,23 @@ class SensorHistoryService
         foreach (SensorCatalog::series() as $id => $spec) {
             $valid[$id] = "(sensor_identifier = '$id' AND sensor_type = '{$spec['sensor_type']}' AND unit = '{$spec['unit']}' AND value BETWEEN {$spec['min']} AND {$spec['max']})";
         }
+        $lightDevices = LightingContract::bh1750Devices($coop)->pluck('id')->map(fn ($id) => (int) $id)->implode(',') ?: '0';
+        $lightVersion = LightingContract::BH1750_MEASUREMENT_VERSION;
+        $valid['outdoor_light_lux'] .= " AND measurement_version = '$lightVersion' AND device_id IN ($lightDevices)";
         $indoor = implode(' OR ', array_intersect_key($valid, array_flip(SensorCatalog::indoorIdentifiers())));
-        $samples->selectRaw("CASE WHEN COUNT(DISTINCT CASE WHEN $indoor THEN sensor_identifier END) = 5 THEN AVG(CASE WHEN $indoor THEN value END) END AS indoor_average");
-        foreach (['outdoor_temperature', 'indoor_humidity', 'gas_adc'] as $metric) {
+        $samples->selectRaw("CASE WHEN COUNT(DISTINCT CASE WHEN $indoor THEN sensor_identifier END) = 5
+            AND COUNT(CASE WHEN $indoor THEN 1 END) = 5
+            AND COUNT(DISTINCT CASE WHEN $indoor THEN device_id END) = 1
+            AND COUNT(DISTINCT CASE WHEN $indoor THEN COALESCE(batch_key, 'legacy') END) = 1
+            THEN AVG(CASE WHEN $indoor THEN value END) END AS indoor_average");
+        foreach (['outdoor_temperature', 'indoor_humidity', 'gas_adc', 'outdoor_light_lux'] as $metric) {
             $samples->selectRaw("MAX(CASE WHEN {$valid[$metric]} THEN value END) AS $metric");
         }
         $summary = DB::query()->fromSub(clone $samples, 'samples')
-            ->selectRaw('AVG(indoor_average) AS indoor_average, MAX(indoor_average) AS indoor_maximum, COUNT(indoor_average) AS indoor_sample_count, AVG(outdoor_temperature) AS outdoor_temperature, AVG(indoor_humidity) AS indoor_humidity, AVG(gas_adc) AS gas_adc')->first();
+            ->selectRaw('AVG(indoor_average) AS indoor_average, MAX(indoor_average) AS indoor_maximum, COUNT(indoor_average) AS indoor_sample_count, AVG(outdoor_temperature) AS outdoor_temperature, AVG(indoor_humidity) AS indoor_humidity, AVG(gas_adc) AS gas_adc, AVG(outdoor_light_lux) AS outdoor_light_lux')->first();
         $bucket = DB::getDriverName() === 'sqlite' ? "CAST(strftime('%s', recorded_at) AS INTEGER) / $interval" : "FLOOR(UNIX_TIMESTAMP(recorded_at) / $interval)";
         $buckets = DB::query()->fromSub($samples, 'samples')
-            ->selectRaw("$bucket AS bucket, MIN(recorded_at) AS recorded_at, AVG(indoor_average) AS indoor_average, COUNT(indoor_average) AS indoor_sample_count, AVG(outdoor_temperature) AS outdoor_temperature, AVG(indoor_humidity) AS indoor_humidity, AVG(gas_adc) AS gas_adc")
+            ->selectRaw("$bucket AS bucket, MIN(recorded_at) AS recorded_at, AVG(indoor_average) AS indoor_average, COUNT(indoor_average) AS indoor_sample_count, AVG(outdoor_temperature) AS outdoor_temperature, AVG(indoor_humidity) AS indoor_humidity, AVG(gas_adc) AS gas_adc, AVG(outdoor_light_lux) AS outdoor_light_lux")
             ->groupBy('bucket')->orderBy('bucket')->paginate($perPage, ['*'], 'page', $page);
         $cast = fn ($row) => collect((array) $row)->map(fn ($value, $key) => $value === null ? null : ($key === 'indoor_sample_count' ? (int) $value : round((float) $value, 4)))->all();
         $data = $buckets->getCollection()->map(function ($row) use ($cast) {

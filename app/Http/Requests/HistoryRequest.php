@@ -14,9 +14,10 @@ class HistoryRequest extends PaginationRequest
         return array_merge(parent::rules(), [
             'from' => ['sometimes', 'date'],
             'to' => array_merge(['sometimes', 'date'], $this->filled('from') ? ['after_or_equal:from'] : []),
-            'sensor_identifier' => ['sometimes', Rule::in(array_keys(SensorCatalog::series()))],
+            // Historical legacy ADC remains queryable even after its ingest gate is disabled.
+            'sensor_identifier' => ['sometimes', Rule::in(array_unique([...array_keys(SensorCatalog::series()), 'outdoor_light_adc']))],
             'sensor_type' => ['sometimes', Rule::in(array_unique(array_column(SensorCatalog::series(), 'sensor_type')))],
-            'event_type' => ['sometimes', Rule::in(['high_indoor_temperature', 'low_outdoor_temperature', 'high_gas_level', 'sensor_recovered', 'device_disconnected', 'device_reconnected', 'configuration_changed'])],
+            'event_type' => ['sometimes', Rule::in(['high_indoor_temperature', 'low_indoor_temperature', 'low_outdoor_temperature', 'high_gas_level', 'sensor_recovered', 'device_disconnected', 'device_reconnected', 'configuration_changed'])],
         ]);
     }
 

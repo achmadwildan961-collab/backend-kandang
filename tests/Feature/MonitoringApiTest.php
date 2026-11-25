@@ -40,13 +40,15 @@ class MonitoringApiTest extends ApiTestCase
         $this->assertSame('unknown', $data['status']);
     }
 
-    public function test_latest_valid_value_is_selected_not_the_newest_invalid_value(): void
+    public function test_newest_invalid_value_disables_aggregate_but_preserves_last_valid_diagnostic(): void
     {
         $this->readings();
         $this->reading('indoor_dht22_1', 900, now()->addSecond());
         $this->travel(2)->seconds();
         $data = app(SensorAggregationService::class)->latest($this->coop);
-        $this->assertSame(30.38, $data['indoor_temperature']['average']);
+        $this->assertNull($data['indoor_temperature']['average']);
+        $this->assertSame(28.0, $data['indoor_temperature']['sensors'][0]['value']);
+        $this->assertSame('invalid', $data['indoor_temperature']['sensors'][0]['status']);
     }
 
     public function test_temperature_and_gas_transitions_recovery_and_strict_boundaries(): void
@@ -62,18 +64,18 @@ class MonitoringApiTest extends ApiTestCase
         $this->coop->readings()->where('sensor_identifier', 'gas_adc')->update(['value' => 1501]);
         $alerts->evaluate($this->coop);
         $alerts->evaluate($this->coop);
-        $this->assertSame(3, SystemEvent::count());
-        $this->assertSame(6, Notification::count());
-        $this->assertEqualsCanonicalizing(['high_indoor_temperature', 'low_outdoor_temperature', 'high_gas_level'], SystemEvent::pluck('event_type')->all());
+        $this->assertSame(2, SystemEvent::count());
+        $this->assertSame(4, Notification::count());
+        $this->assertEqualsCanonicalizing(['high_indoor_temperature', 'high_gas_level'], SystemEvent::pluck('event_type')->all());
         $this->travel(6)->minutes();
         $alerts->evaluate($this->coop);
-        $this->assertSame(3, SystemEvent::count()); // Unknown/stale is not a recovery.
+        $this->assertSame(2, SystemEvent::count()); // Unknown/stale is not a recovery.
         $this->coop->readings()->where('sensor_type', 'indoor_temperature')->update(['value' => 28, 'recorded_at' => now()]);
         $this->coop->readings()->where('sensor_identifier', 'outdoor_temperature')->update(['value' => 28, 'recorded_at' => now()]);
         $this->coop->readings()->where('sensor_identifier', 'gas_adc')->update(['value' => 1100, 'recorded_at' => now()]);
         $alerts->evaluate($this->coop);
         $alerts->evaluate($this->coop);
-        $this->assertSame(3, SystemEvent::where('event_type', 'sensor_recovered')->count());
+        $this->assertSame(2, SystemEvent::where('event_type', 'sensor_recovered')->count());
     }
 
     public function test_partial_average_does_not_raise_an_indoor_warning(): void

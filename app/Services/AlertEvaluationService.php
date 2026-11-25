@@ -18,8 +18,9 @@ class AlertEvaluationService
             $state = $settings->alert_state ?? [];
             $data = $this->sensors->latest($locked);
             $conditions = [
-                'indoor' => [$data['indoor_temperature']['status'], 'high_indoor_temperature', 'High Indoor Temperature', $data['indoor_temperature']['average'], $settings->maximum_indoor_temperature, 'celsius'],
-                'outdoor' => [$data['outdoor_temperature']['condition'], 'low_outdoor_temperature', 'Low Outdoor Temperature', $data['outdoor_temperature']['value'], $settings->minimum_outdoor_temperature, 'celsius'],
+                'indoor' => [$data['indoor_temperature']['high_condition'], 'high_indoor_temperature', 'High Indoor Temperature', $data['indoor_temperature']['average'], $settings->maximum_indoor_temperature, 'celsius'],
+                // Preserve the legacy outdoor state/events, but never evaluate or recover that retired rule.
+                'indoor_low' => [$data['indoor_temperature']['low_condition'], 'low_indoor_temperature', 'Low Indoor Temperature', $data['indoor_temperature']['average'], $settings->minimum_indoor_temperature, 'celsius'],
                 'gas' => [$data['gas']['condition'], 'high_gas_level', 'High Gas Level', $data['gas']['value'], $settings->gas_threshold, 'adc'],
             ];
             foreach ($conditions as $source => [$status,$type,$title,$value,$threshold,$unit]) {
