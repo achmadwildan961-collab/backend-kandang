@@ -1,5 +1,7 @@
 # MQTT compatibility
 
+**Phase8.3B:** locked schemas/fixtures tetap unchanged. Laravel sekarang memiliki explicit authenticated staging boundary, optional scoped outbox dispatch, dan LCD staging publisher. Tidak ada production subscriber/binding baru. Hasil aktual dan inventory: [report](../PHASE8_3_REPORT.md).
+
 **NO_BACKEND_CHANGE** pada telemetry v1. Prefix exact `smart-kandang/coops/{coop_id}/devices/{device_identifier}`. Registered board types `esp32` dan `nodemcu_esp8266`; identifier case-sensitive. Backend must provision devices/sensors/allowlists; firmware tidak membuat registry rows atau mengubah environment Laravel.
 
 | Suffix | Firmware behavior | Runtime backend |
@@ -8,10 +10,10 @@
 | `/status` | QoS1 online heartbeat/graceful offline, non-retained | Existing heartbeat/offline checker |
 | `/integration/v1/config/operational` | Development-only exact subscriber/parser + ESP32 NVS | Production delivery blocked |
 | `/integration/v1/config/lighting_lux` | Independent version/domain, development-only | Production delivery blocked |
-| `/integration/v1/ack` | Serializer + Serial draft only; no network sender | Authenticated live ingress absent |
-| `/integration/v1/report` | Unknown-only serializer testable, no network sender | Internal validator only |
-| `/integration/v1/session` | No sender; no fabricated authentication | Proposal, no receiver |
-| `/integration/v1/display` | Optional development-only parser/target/TTL check | No live publisher |
+| `/integration/v1/ack` | Serializer + Serial draft only; no network sender | StagingIngress authenticated capability; production ingress absent |
+| `/integration/v1/report` | Unknown-only serializer testable, no network sender | Scoped staging validator; actual reported GPIO/physical acceptance pending |
+| `/integration/v1/session` | No network sender; proposal unchanged | Staging-only strict receiver, no production router |
+| `/integration/v1/display` | Development-only parser/target/TTL/retain check | Explicit scoped non-retained staging publisher; production disabled |
 | Any actuator command | No subscriber/driver | Physical commands disabled |
 
 Telemetry has11 Indoor or3 Outdoor channels maximum, valid finite numeric values only, no undocumented boot_id/schema_version/averages/types. Single humidity legacy is not emitted. Five humidity values belong to same envelope/timestamp. Missing channels omitted; all-missing batch suppressed. UTC whole seconds from SNTP, no uptime timestamps; clock holdover1h, batch timestamp strictly increasing before queue. Backend v1 accepts epoch1..2147483647, firmware requires a plausibly synchronized date>=2024. Cross-node exact timestamp pairing is not guaranteed by independent SNTP schedules; no invented delta-temperature tolerance.
@@ -32,4 +34,22 @@ Independent ESP32 Preferences blobs (`poultriq-draft` namespace keys `operationa
 
 Runtime ACK is only Serial `acknowledged` after successful validation/storage; no applied ACK, report or session network publish exists. Standalone ACK serializer supports contract status shapes for offline tests but is not an authorization boundary. Manual lighting stays unknown because authorized command ingress is absent. Pure preview heater/two-fan/gas/lux logic never drives GPIO.
 
-MQTT2.5.2 advanced callback does not expose RETAIN metadata. Draft configuration may be delivered retained only after explicit staging approval at broker publisher/ACL; firmware cannot independently inspect that bit with this callback. Display expiry and generated_at replay checks exist, but retained-message policy enforcement needs a metadata-capable adapter before live activation. See backend gap report; do not treat draft flags as that fix.
+MQTT2.5.2 advanced callback does not expose RETAIN itself. Phase8.3B `MetadataClient` wraps the decrypted Arduino Client stream, tracks bounded MQTT3.1.1 fixed header/remaining length, and supplies one-shot metadata to that callback. This depends on the pinned lwmqtt implementation reading exactly one packet before callback (source inspected); it is not a replacement MQTT decoder. Malformed framing latches unknown until reconnect; incomplete/unknown metadata is rejected. Display retained is always rejected. Config retained requires `FW_DRAFT_RETAINED_CONFIG=1` plus development/draft flags, default0; backend staging additionally requires `MQTT_STAGING_RETAINED_AUTHORIZED=true`. MQTT3 brokers clear RETAIN on normal forwarded publications, so receiver metadata alone cannot prove publisher's original retain option: exact-topic broker ACL/policy remains required. Native framing/policy tests and both board builds pass; actual broker/TLS packet timing remains NOT VERIFIED.
+
+## Explicit staging boundary and ACL handoff
+
+Retain forwarding semantics above follow [OASIS MQTT3.1.1 §3.3.1, MQTT-3.3.1-9](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/mqtt-v3.1.1.html). Received retain validation and broker authorization are separate requirements.
+
+`MQTT_STAGING_ENABLED`, `MQTT_STAGING_VIRTUAL_ONLY`, `MQTT_STAGING_INTEGRATION_ENABLED` defaultfalse. Factory requires literal127.0.0.1, nonstandard port1024..65535, dedicated backend credentials and `MQTT_STAGING_VIRTUAL_SCOPES` mapping VIRTUAL identifiers to integer coop IDs. `MQTT_STAGING_DEVICE_PASSWORD_HASHES` maps each username (equal to registry identifier) to password_hash; plaintext test/device secrets are not committed. StagingIdentity additionally requires SQLite `:memory:` or MySQL `smart_kandang_test` at127.0.0.1. The operator must verify that MySQL instance/datadir is disposable; a database name is not operational authorization.
+
+Use `StagingIdentity::authenticate` only with credentials actually validated for the incoming connection/trusted test harness, then `StagingIngress::ingest(identity, exactTopic, rawBytes, actualRetain)`. Do not derive identity from JSON/topic and do not look up a device secret to impersonate that device. Production MQTT3 subscriber callbacks lack publisher username; a broker ACL/identity bridge still requires design/acceptance. No blind wildcard router was added.
+
+Required broker ACL after approval, with P equal to that device's exact registered prefix:
+
+| Principal | Allowed writes | Allowed reads |
+| --- | --- | --- |
+| Indoor device | P/telemetry, P/status, P/integration/v1/session, P/integration/v1/ack, P/integration/v1/report | P/integration/v1/config/operational, P/integration/v1/config/lighting_lux |
+| Outdoor device | P/telemetry, P/status, P/integration/v1/session, P/integration/v1/ack | Both P config topics, P/integration/v1/display |
+| Dedicated staging backend | Config/display for explicitly scoped VIRTUAL devices only | Explicit device telemetry/status/session/ACK/report topics only |
+
+No command writes, cross-coop subscriptions or device `#` permissions. This is an ACL handoff requirement, not a claim an actual broker ACL was installed. DeviceFeedback independently rejects Outdoor actuator reports. Retained inbound telemetry/status/session/ACK/report is rejected before mutation. Session wire remains locked proposal; fresh new boot resets delivery ACK requirement without resetting replay receipts. LCD publication keeps the schema's production `publication_enabled=false`; staging delivery is separate, no field reinterpretation.

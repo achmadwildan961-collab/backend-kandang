@@ -1,6 +1,6 @@
 # Poultriq Arduino firmware — Phase 8.3
 
-26 November 2026. Baseline backend `65a7ef565d88bc11c112789594323802bdd8ae97`. Firmware baru, bukan klaim hasil uji fisik prototype. Backend/contract lock tetap unchanged.
+26 November 2026. Baseline backend `65a7ef565d88bc11c112789594323802bdd8ae97`, firmware checkpoint `c3ae546`. Phase8.3B menambah backend staging integration dan shared MQTT retain adapter; contract lock tetap unchanged. Bukan klaim hasil uji broker/board/relay fisik. Lihat hasil terbaru di laporan, bukan angka historis8.3A.
 
 - [Indoor ESP32](indoor_esp32/indoor_esp32.ino): lima DHT22 suhu/RH terpisah, MQ135 ADC1 opsional, batch valid/partial, konfigurasi draft di NVS Preferences.
 - [Outdoor NodeMCU](outdoor_nodemcu/outdoor_nodemcu.ino): driver AHT20 dan BH1750 dengan deadline/recovery, LCD local atau parser display proposal.

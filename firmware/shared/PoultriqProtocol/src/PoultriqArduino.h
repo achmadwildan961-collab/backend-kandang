@@ -4,6 +4,7 @@
 #include <Wire.h>
 #include "PoultriqDefaults.h"
 #include "PoultriqDisplay.h"
+#include "PoultriqMqttMetadata.h"
 #include "PoultriqSensors.h"
 #if defined(ESP32)
 #include <WiFi.h>
@@ -130,6 +131,7 @@ public:
 };
 class Runtime {
   BoundedSocket socket_;
+  MetadataClient metadataSocket_{socket_};
 #if FW_MQTT_TLS
 #if defined(ESP8266)
   BearSSL::X509List anchors_{FW_CA_CERT};
@@ -148,6 +150,7 @@ class Runtime {
                                  : (FW_DRAFT_INTEGRATION ? 1536 : 1)] = {},
                                                                   inboundTopic_[TopicBytes] = {};
   size_t inboundLength_ = 0;
+  bool inboundRetained_ = false;
   char work_[1024] = {};
   uint32_t feedbackSequence_ = 0;
 #if FW_DRAFT_INTEGRATION
@@ -165,6 +168,9 @@ class Runtime {
            mqtt_.publish(t, p, false, 1);
   }
   void received(char *t, char *bytes, int count) {
+    bool retained = false;
+    if (!metadataSocket_.metadata.take(retained))
+      return; // Unknown metadata fails closed, never inferred from payload.
     // Never publish/subscribe inside callback (library can dispatch while waiting
     // for PUBACK). Copy one bounded inbound record and process after mqtt.loop.
     if (inboundLength_ || count <= 0 || size_t(count) >= sizeof(inbound_) ||
@@ -174,6 +180,7 @@ class Runtime {
     inbound_[count] = 0;
     strcpy(inboundTopic_, t);
     inboundLength_ = size_t(count);
+    inboundRetained_ = retained;
   }
   void processInbound() {
     if (!inboundLength_)
@@ -187,8 +194,8 @@ class Runtime {
       if (!same(expected, inboundTopic_))
         continue;
       auto &store = light ? light_ : operational_;
-      if (clockValid() && store.accept(inbound_, inboundLength_, us) &&
-          feedbackSequence_ < INT32_MAX) {
+      if (inboundPolicy(true, inboundRetained_, true, FW_DRAFT_RETAINED_CONFIG) && clockValid() &&
+          store.accept(inbound_, inboundLength_, us) && feedbackSequence_ < INT32_MAX) {
         char id[37];
         newUuid(id);
         if (ack(store.current, "acknowledged", FW_COOP_ID, FW_DEVICE_IDENTIFIER, ids_.boot(), id,
@@ -203,7 +210,8 @@ class Runtime {
     }
 #endif
 #if FW_DRAFT_DISPLAY
-    if (board_ == Board::Outdoor && clockValid() && route(expected, "integration/v1/display") &&
+    if (inboundPolicy(true, inboundRetained_, false, false) && board_ == Board::Outdoor &&
+        clockValid() && route(expected, "integration/v1/display") &&
         same(expected, inboundTopic_)) {
       Display candidate;
       if (parseDisplay(inbound_, inboundLength_, FW_COOP_ID, displayRegistryId, displayIndoorId, us,
@@ -283,7 +291,7 @@ public:
     WiFi.persistent(false);
     WiFi.mode(WIFI_STA);
     WiFi.setAutoReconnect(false);
-    mqtt_.begin(FW_MQTT_HOST, FW_MQTT_PORT, socket_);
+    mqtt_.begin(FW_MQTT_HOST, FW_MQTT_PORT, metadataSocket_);
     mqtt_.setOptions(20, true, FW_NETWORK_TIMEOUT_MS);
     mqtt_.dropOverflow(true);
     mqtt_.onMessageAdvanced([this](MQTTClient *, char *t, char *p, int n) { received(t, p, n); });

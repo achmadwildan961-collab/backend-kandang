@@ -1,4 +1,95 @@
-# Laporan implementasi firmware Phase 8.3
+# Laporan Phase 8.3B - integrasi backend dan firmware
+
+26 November 2026, branch `feat/phase8-3-firmware`, HEAD awal/akhir `c3ae546`. Baseline backend `65a7ef565d88bc11c112789594323802bdd8ae97`. Phase8.3A sudah di-commit pemilik; bagian historis di bawah dipertahankan sebagai bukti sebelumnya. Instruksi Phase8.3B mengotorisasi perubahan backend dan firmware berikut. Tidak ada perubahan locked contracts, migrations, routes, Flutter, main/dev, produksi, atau output relay.
+
+## Hasil Phase8.3B dan batasnya
+
+| Area | Implementasi dan bukti | Status aktivasi |
+| --- | --- | --- |
+| Autentikasi staging | `StagingIdentity::authenticate(username,password)` memverifikasi password_hash per registered VIRTUAL device, exact case/coop, revocation, environment dan database. Capability tidak berasal dari payload. | Default OFF; hanya loopback staging, SQLite memory atau MySQL smart_kandang_test di127.0.0.1. Bukan login perangkat produksi |
+| Ingress | `StagingIngress::ingest(identity,topic,raw,retained)` memakai telemetry/status v1 existing dan locked session/ACK/report schemas; exact ACL scope, payload identity, retained rejection, TTL, duplicate/collision/retired boot/sequence checks, transaksi/lock. Session lama tidak mengganti boot lebih baru; duplicate tidak menyegarkan online. | Explicit trusted-adapter boundary; tidak ada HTTP route atau subscriber produksi baru |
+| Config operational/lighting_lux | Optional staging capability pada service existing; stage hanya target device dalam transaksi settings; immutable version/hash/expiry, leases/retries/PUBACK, ACK/reboot requeue. Domain independen. Row blocked lama tidak diaktifkan. | Dispatcher produksi tetap DisabledMqttTransport; staging transport dibuat eksplisit, tidak di-bind ke scheduler |
+| Lifecycle | requested/stored settings → pending → published (broker receipt) → acknowledged → applied hanya jika laporan applied sesuai boot/version/hash. Native firmware hanya acknowledged setelah accept/readback. | Tidak ada klaim physically verified atau ON dari konfigurasi/ACK. Semua command endpoints tetap blocked |
+| LCD | `publishDisplay(identity,payload)` scoped NodeMCU, schema/target/TTL, QoS1 non-retained, bounded retry, expiry dicek lagi setelah connect. `publication_enabled=false` tetap capability produksi. | Staging-only; tidak membuat queue pesan display basi |
+| Bug LCD | `LcdPayload` kini menormalisasi reported_at database ke UTC ISO untuk schema/parser firmware. Roundtrip dengan report tersimpan diuji. | NO_FIRMWARE_CHANGE; memperbaiki serialisasi sesuai kontrak yang sudah terkunci |
+| Retain firmware | `PoultriqMqttMetadata.h`: wrapper Arduino Client membaca framing plaintext setelah TLS, menangkap RETAIN sebelum callback MQTT2.5.2, metadata single-use/reset-on-connect. Unknown/malformed gagal tertutup; display retained ditolak; config retained memerlukan flag tambahan OFF. | FIRMWARE_SYNC_REQUIRED; kedua board compile. Broker/board timing acceptance belum dilakukan |
+| Actual C++ integration | Native serializer telemetry → Laravel DB → authenticated REST schema2 → LCD serializer → C++ parser; config actual outbox → C++ ConfigStore/mock storage → ACK actual serializer → backend. Report actual serializer tetap unknown. | Proses host nyata + database nyata terisolasi; MQTT client IO mocked, NVS/bus fisik tidak dipakai |
+
+**Batas autentikasi penting:** subscriber MQTT3 biasa tidak menerima username publisher dalam callback. `StagingIdentity` tidak boleh dibuat dari identifier payload atau sandi lookup berdasarkan topik. Future ingress harus menerima principal dari koneksi yang benar-benar diautentikasi atau bridge/ACL yang disahkan. Production `MqttSubscriber` tidak diubah; per-device broker credentials/ACL/TLS tetap perlu acceptance. Hash payload bukan autentikasi publisher.
+
+## Verifikasi Phase8.3B
+
+| Pemeriksaan | Hasil aktual |
+| --- | --- |
+| Focused Laravel integration/delivery/staging transport | 26 tests,237 assertions PASS; dua test tambahan replay/session25 assertions PASS |
+| Full SQLite | **207 tests,1944 assertions PASS**,48.474s; tanpa skipped tests pada workstation ini |
+| Full disposable MySQL8.4.3 | **207 tests,1944 assertions PASS**,156.939s; isolated port58083, DB smart_kandang_test, dedicated test user; no skips |
+| Native C++17 / Zig0.14.1 / ArduinoJson7.4.3 | Compile PASS; Python **49 tests PASS**,1.909s (45 existing +4 retain framing/policy tests) |
+| Locked contract check | **9 fixtures/8 schemas PASS**, hardware_approved=false, file hashes tidak diubah |
+| ESP32 development build | PASS; flash1073964/1310720, RAM58840/327680 bytes |
+| NodeMCU ESP8266 development/display build | PASS; flash404480/1048576, RAM47800/80192, IRAM61171/65536 bytes |
+| Full Pint | PASS |
+| PHP lint, clang-format, whitespace | PASS:9 changed/new PHP files,4 C++ files; git diff --check |
+| Broker integration | **BROKER-LIVE NOT VERIFIED**: Mosquitto/Docker tidak tersedia di PATH; tidak ada broker operasional yang dihubungi |
+| Physical boards/sensors/relays/NVS/push | NOT RUN; tidak upload, mengaktifkan output, atau mengirim notifikasi |
+
+Evidence ignored `.runtime/phase8-3-tools/phase83b-{focused,sqlite,mysql-final,native-tests,indoor,outdoor,pint}.log`. MySQL pertama gagal autentikasi karena environment password kosong di Windows hilang lalu fallback dotenv; hanya mencoba isolated port58083. Perbaikan harness memakai dedicated disposable user dan explicit nonempty test password, bukan perubahan kredensial/environment operasional atau pelemahan tes. Assertion count untuk Python tidak dipalsukan sebagai PHPUnit count.
+
+MySQL temporary datadir `.runtime/phase8-3b-mysql-ea476e67914e4ca2a309d2bde5f185a2/data`, PID3196, diverifikasi dari command line sebelum startup test dan shutdown. Instance disposable dihentikan setelah suite; tidak menghentikan service MySQL operasional. Tidak ada Mosquitto di standard install locations/proses yang diperiksa. Git akhir18 modified tracked +4 untracked, index kosong, HEAD tetapc3ae54641c015a2d46d73cbe6a07017409559c99.
+
+Build flags sama dengan Phase8.3A development coverage: ESP32 development/draft/network/pin/coop1; Outdoor menambah draft display/LCD. Credentials tetap kosong, build tidak di-upload. Source defaults tetap OFF. Formatting setelah build tidak mengubah semantik. Ukuran default profile historis bukan hasil build baru Phase8.3B.
+
+## Exact inventory perubahan Phase8.3B
+
+Baru:
+- `app/Services/Firmware/StagingIdentity.php`
+- `app/Services/Firmware/StagingIngress.php`
+- `tests/Feature/FirmwareStagingIntegrationTest.php`
+- `firmware/shared/PoultriqProtocol/src/PoultriqMqttMetadata.h`
+
+Diubah:
+- `app/Services/Firmware/StagingMqttTransport.php`
+- `app/Services/Integration/ConfigurationDelivery.php`
+- `app/Services/Integration/ConfigurationDispatcher.php`
+- `app/Services/Integration/DeviceFeedback.php`
+- `app/Services/Integration/LcdPayload.php`
+- `config/firmware.php`
+- `firmware/shared/PoultriqProtocol/src/PoultriqArduino.h`
+- `firmware/shared/PoultriqProtocol/src/PoultriqDefaults.h`
+- `firmware/tests/native_runner.cpp`
+- `firmware/tests/test_contract.py`
+- `firmware/PHASE8_3_CHECKPOINT.md`
+- `firmware/PHASE8_3_REPORT.md`
+- `firmware/README.md`
+- `firmware/docs/BACKEND_GAP_REPORT.md`
+- `firmware/docs/MQTT_COMPATIBILITY.md`
+- `firmware/docs/FIRMWARE_CHANGELOG.md`
+- `firmware/docs/ARDUINO_SETUP.md`
+- `firmware/docs/TESTING_CHECKLIST.md`
+
+Kedua `.ino` dipertahankan; perbaikan runtime digunakan keduanya melalui shared library. Tidak ada dependency vendor, schema/fixture/lock, migration atau API route yang diubah. Tidak ada file staged/commit/push/merge/reset/clean/deploy.
+
+## Handoff Flutter dan keputusan kesiapan
+
+**Backend dapat dijeda untuk pekerjaan Flutter UI**, memakai REST yang sudah stabil dan status unavailable/blocked secara jujur. Ini bukan kesiapan produksi IoT.
+
+- Dashboard memakai `GET /api/v1/coops/{id}/sensors/latest?schema_version=2`; enam metric independen: indoor_temperature.average, outdoor_temperature.value, indoor_humidity.average, outdoor_humidity.value, gas.value (ADC), outdoor_light_lux.value. Partial RH bukan official average; null tidak boleh ditampilkan nol.
+- Chart/export tetap schema_version=2. Default schema1 mempertahankan legacy single humidity dan legacy light ADC; tidak dikonversi ke RH average/lux.
+- Settings minimum/maksimum indoor dan lighting_lux memiliki config_version/CAS terpisah; UI membedakan stored, delivery status, current, applied_current dan reported state. PUBACK/acknowledged bukan applied. Report physical_verified tetapfalse.
+- UI command tidak boleh diaktifkan: endpoint lighting command tetap409; external_delivery_enabled=false dan publication_enabled=false adalah capability produksi, bukan hasil mock/staging.
+- Tidak perlu menambahkan MQTT credential ke Flutter. Provisioning device, broker ACL, session/display approval, push-provider acceptance berada di fase integrasi berikutnya.
+
+## Yang masih perlu approval/acceptance
+
+Session/display dan ACK/report network sender Arduino tetap proposal; tidak ditambahkan live sender atau physical command driver. Setelah protokol dan identity bridge disahkan, tim IoT perlu menyambungkan callback trusted identity, sequence/session handshake/re-ACK, serta memastikan status persisted/applied sesuai bukti aktual. Outdoor masih RAM-only; keputusan durability/authority offline dan jalur lux Outdoor ke controller Indoor belum ada.
+
+Tim hardware wajib memverifikasi exact coop/device/numeric registry IDs, per-device credentials/exact-topic ACL/TLS IP SAN/NTP; DHT GPIO16/17/18/21/23 dan batch timing; MQ135 GPIO34 ADC1/tegangan/warmup/presence/filter/calibration; I2C GPIO4/5, AHT20 address0x38, BH1750 address0x23/0x5C, shared-bus/pull-ups; LCD0x27 atau alamat aktual dan16x2/20x4. Angka tersebut konfigurasi contoh yang perlu dibuktikan, bukan sign-off. Tambahan khusus8.3B: pin MQTT256dpi2.5.2; gunakan library wrapper metadata terbaru; retained snapshot hanya dengan persetujuan kedua sisi (`MQTT_STAGING_RETAINED_AUTHORIZED`, `FW_DRAFT_RETAINED_CONFIG`) dan uji packet fragmentation/reconnect/oversize/TLS sebelum live.
+
+ESP8266 IRAM masih93%; TLS heap, watchdog, stack, NVS power-cut/wear, electrical interlocks, relay polarity/boot/anti-short-cycle/feedback dan single control authority tetap blocker fisik. Tidak ada parameter safety atau gas ppm yang dikarang.
+
+---
+
+## Arsip laporan Phase8.3A (status Git dan hasil tes historis)
 
 26 November 2026, Asia/Jakarta. Workspace `D:\FlutterProjects\smart-kandang-backend`, branch `feat/phase8-3-firmware`, baseline/HEAD `65a7ef565d88bc11c112789594323802bdd8ae97`. Implementasi berada seluruhnya di `firmware/`. Source Laravel, migrations, backend tests, konfigurasi, Flutter, dan locked contracts tidak berubah. Instruksi eksplisit Phase 8.3 mengotorisasi firmware meskipun AGENTS sebelumnya membatasi pekerjaan pada backend.
 

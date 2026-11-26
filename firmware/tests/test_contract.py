@@ -71,6 +71,31 @@ class JsonProcess:
 
 
 class FirmwareContract(unittest.TestCase):
+    def test_mqtt_metadata_fragmented_publish_and_one_shot_consumption(self):
+        result = self.call('metadata', chunks=[[0x31], [4], [0, 1], [97, 120], []])['results']
+        self.assertEqual([r['known'] for r in result], [False, False, False, True, False])
+        self.assertTrue(result[3]['retained'])
+        self.assertFalse(result[3]['allowed'])  # retained display rejected
+
+    def test_mqtt_metadata_retained_configuration_needs_explicit_authorization(self):
+        for configuration, authorized, expected in [(False, True, False), (True, False, False), (True, True, True)]:
+            r = self.call('metadata', chunks=[[0x33, 6, 0, 1, 97, 0, 1, 120]],
+                          configuration=configuration, authorized=authorized)['results'][0]
+            self.assertTrue(r['known'])
+            self.assertEqual(r['allowed'], expected)
+        r = self.call('metadata', chunks=[[0x32, 6, 0, 1, 97, 0, 1, 120]])['results'][0]
+        self.assertTrue(r['allowed'])  # QoS1 non-retained display
+
+    def test_mqtt_metadata_multibyte_length_and_nonpublish_packet(self):
+        r = self.call('metadata', chunks=[[0x30, 0x80], [1] + [0] * 127, [0], [0xD0, 0]])['results']
+        self.assertEqual([v['known'] for v in r], [False, False, True, False])
+        self.assertTrue(r[2]['allowed'])
+
+    def test_mqtt_metadata_invalid_length_latches_and_incomplete_is_unknown(self):
+        r = self.call('metadata', chunks=[[0x31, 0x80, 0x80, 0x80, 0x80], [0x30, 1, 0]])['results']
+        self.assertEqual([v['known'] for v in r], [False, False])
+        self.assertFalse(self.call('metadata', chunks=[[0x31, 3, 0]])['results'][0]['known'])
+
     @classmethod
     def setUpClass(cls):
         cls.cpp = JsonProcess([ARGS.runner])

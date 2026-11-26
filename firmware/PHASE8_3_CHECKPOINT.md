@@ -1,4 +1,28 @@
-# Phase 8.3 checkpoint - software selesai, hardware acceptance pending
+# Phase 8.3B checkpoint - safe staging software selesai, live acceptance pending
+
+26 November 2026: resumed on `feat/phase8-3-firmware`, clean initial HEAD `c3ae546` (Phase8.3A committed by owner). Original backend baseline65a7ef5 preserved. Earlier Phase8.3B request explicitly authorized backend + firmware safe integration. Latest resume Phase8.3 instruction preserves those existing backend changes; final resume only verifies source/evidence/handoff, does not restart completed implementation. No new branch, staging/commit/push/deploy or operational broker/DB access.
+
+Selesai: scoped staging credentials/capability, reuse transactional deliveries/dispatcher/feedback, strict session/ACK/report/telemetry ingress, LCD staging transport, actual C++ -> Laravel DB/API integration tests, Arduino MQTT retain metadata adapter. Production bindings remain DisabledMqttTransport/DisabledPushProvider; physical commands disabled. Locked schemas/fixtures unchanged. New integration flag defaultfalse; VIRTUAL identities and isolated database only. No schema migration. No production subscriber, Arduino live session/ACK/report sender, broker identity bridge or physical control added; these remain unapproved protocol/hardware decisions.
+
+## Bukti final Phase8.3B
+
+- Full SQLite:207 tests/1944 assertions PASS48.474s; full disposable MySQL8.4.3:207 tests/1944 assertions PASS156.939s. No skips on this workstation; all198 previous backend tests preserved +9 integration tests.
+- Focused integration/delivery/transport:26 tests/237 assertions PASS;2 added replay/session cases25 assertions PASS, included in full207.
+- Native C++ rebuilt PASS;49 Python tests PASS1.909s (45 existing +4 MQTT metadata tests). Same headers as sketches; mock storage/bus, not NVS silicon.
+- ESP32 development build PASS flash1073964/RAM58840. NodeMCU development/display PASS flash404480/RAM47800/IRAM61171. CLI1.6.0, ESP32 core3.3.11, ESP8266core3.1.2, ArduinoJson7.4.3, MQTT2.5.2; no upload.
+- Lock:9 fixtures/8schemas PASS, unchanged. Full Pint,9 changed/new PHP lint, clang-format dry-run, git diff --check PASS. No migration/routes/provider/Flutter changes.
+- Git:HEADc3ae54641c015a2d46d73cbe6a07017409559c99;18 tracked files modified +4 new files, none staged. No branch creation/switch/commit/push/reset/clean/merge/deploy.
+- BROKER-LIVE NOT VERIFIED: no Mosquitto/Docker in PATH, standard Mosquitto install locations absent, no Mosquitto process. MQTT IO in tests uses mocked client. Actual native payloads and database writes are real test executions; no physical hardware/push acceptance.
+
+Evidence logs: ignored `.runtime/phase8-3-tools/phase83b-{focused,sqlite,mysql-final,native-tests,indoor,outdoor,pint}.log`. MySQL was initialized in `.runtime/phase8-3b-mysql-ea476e67914e4ca2a309d2bde5f185a2/data`, loopback58083, dedicated smart_kandang_test user/DB; new instance PID3196 verified against datadir/port then shut down with mysqladmin. No operational MySQL service stopped. First MySQL attempt failed auth because Windows empty env password fell back to dotenv; explicit disposable user fixed the harness. Do not copy any operational credentials or weaken DB guard. Test artifacts retained, ignored.
+
+No build/test session needs resuming. Backend integration can pause for Flutter UI using existing schema2 REST with null/blocked/applied distinctions; it cannot be called production IoT ready. Next only after decisions: authenticated broker ACL/identity bridge and approved session/display wire/network senders, isolated broker acceptance, physical NVS/TLS/watchdog/memory/sensor/pin/calibration/relay safety verification. Exact handoff and file list in PHASE8_3_REPORT.md and docs/MQTT_COMPATIBILITY.md. Re-read those before enabling anything; do not reimplement completed software or drain blocked snapshots.
+
+Corrections this phase: inherited Laravel test helper name collision fixed; synthetic BH1750 capability explicitly configured in isolated tests; LCD reported_at normalized from DB timestamp to locked UTC format; stale Eloquent test restoration fixed. Tests/contracts were not weakened.
+
+Historical Phase8.3A evidence below is superseded where noted, not current Git status.
+
+## Historical Phase8.3A checkpoint
 
 26 November 2026 (Asia/Jakarta). Workspace `D:\FlutterProjects\smart-kandang-backend`; branch `feat/phase8-3-firmware`; HEAD/baseline `65a7ef565d88bc11c112789594323802bdd8ae97`. Git status aktual hanya `?? firmware/`, 27 file baru, index kosong, tidak ada tracked backend/locked contract change. Main/dev, Flutter, services/DB/broker operasional dan relays tidak disentuh. Tidak commit/stage/push/reset/clean/merge/deploy/upload.
 

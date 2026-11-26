@@ -12,6 +12,12 @@
 #ifndef FW_DRAFT_DISPLAY
 #define FW_DRAFT_DISPLAY 0
 #endif
+#ifndef FW_DRAFT_RETAINED_CONFIG
+#define FW_DRAFT_RETAINED_CONFIG 0
+#endif
+#if FW_DRAFT_RETAINED_CONFIG && (!FW_DEVELOPMENT || !FW_DRAFT_INTEGRATION)
+#error "Retained snapshots require explicit isolated draft configuration authorization."
+#endif
 #if (FW_DRAFT_INTEGRATION || FW_DRAFT_DISPLAY) && !FW_DEVELOPMENT
 #error "Draft integration requires FW_DEVELOPMENT=1; no authenticated live ingress exists."
 #endif

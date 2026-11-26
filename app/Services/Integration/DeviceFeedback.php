@@ -4,21 +4,23 @@ namespace App\Services\Integration;
 
 use App\Models\Coop;
 use App\Models\Device;
+use App\Services\Firmware\StagingIdentity;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class DeviceFeedback
 {
-    // Internal adapter: caller must authenticate device identity via future mTLS/ACL.
+    // Internal adapter: explicit authenticated staging capability or unit simulation.
     // No live subscriber/HTTP route exposes these methods in this release.
-    public function openSession(Device $authenticatedDevice, string $bootId): void
+    public function openSession(Device $authenticatedDevice, string $bootId, ?StagingIdentity $staging = null): void
     {
-        $this->guard();
+        $this->guard($authenticatedDevice, $staging);
         Validator::make(['boot_id' => $bootId], ['boot_id' => ['required', 'uuid']])->validate();
-        DB::transaction(function () use ($authenticatedDevice, $bootId) {
+        DB::transaction(function () use ($authenticatedDevice, $bootId, $staging) {
             Coop::whereKey($authenticatedDevice->coop_id)->lockForUpdate()->firstOrFail();
             $device = Device::whereKey($authenticatedDevice->id)->lockForUpdate()->firstOrFail();
+            $staging?->authorize($device);
             $this->require($device->coop_id === $authenticatedDevice->coop_id && IntegrationPolicy::target($device), 'Device reassigned or unsupported.');
             $previous = DB::table('integration_sessions')->where('device_id', $device->id)->where('boot_id', $bootId)->first();
             $this->require(! $previous || ($previous->current && $previous->coop_id === $device->coop_id), 'Retired boot replay.');
@@ -36,9 +38,9 @@ class DeviceFeedback
         }, 3);
     }
 
-    public function ingest(Device $authenticatedDevice, string $topic, array $payload, bool $retained = false): string
+    public function ingest(Device $authenticatedDevice, string $topic, array $payload, bool $retained = false, ?StagingIdentity $staging = null): string
     {
-        $this->guard();
+        $this->guard($authenticatedDevice, $staging);
         $this->require(! $retained, 'Retained feedback rejected.');
         $kind = $payload['kind'] ?? null;
         $rules = ['schema_version' => ['required', 'integer', 'in:1'], 'kind' => ['required', 'in:ack,report'],
@@ -60,9 +62,10 @@ class DeviceFeedback
         $sent = CarbonImmutable::createFromFormat('Y-m-d\TH:i:s\Z', $payload['sent_at'], 'UTC');
         $this->require($sent->lte(now()) && $sent->gte(now()->subSeconds(max(1, config('integration.report_seconds')))), 'Stale or future feedback.');
 
-        return DB::transaction(function () use ($authenticatedDevice, $topic, $payload, $kind, $sent) {
+        return DB::transaction(function () use ($authenticatedDevice, $topic, $payload, $kind, $sent, $staging) {
             Coop::whereKey($authenticatedDevice->coop_id)->lockForUpdate()->firstOrFail();
             $device = Device::whereKey($authenticatedDevice->id)->lockForUpdate()->firstOrFail();
+            $staging?->authorize($device);
             $expected = "smart-kandang/coops/{$device->coop_id}/devices/{$device->device_identifier}/integration/v1/$kind";
             $this->require($device->coop_id === $authenticatedDevice->coop_id && IntegrationPolicy::target($device)
                 && $topic === $expected && $payload['coop_id'] === $device->coop_id
@@ -113,8 +116,13 @@ class DeviceFeedback
         }, 3);
     }
 
-    private function guard(): void
+    private function guard(Device $device, ?StagingIdentity $staging): void
     {
+        if ($staging) {
+            $staging->authorize($device);
+
+            return;
+        }
         $this->require(IntegrationPolicy::simulation(), 'Feedback adapter disabled pending authenticated firmware contract.');
     }
 

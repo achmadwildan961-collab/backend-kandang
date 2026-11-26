@@ -1,5 +1,16 @@
 # Firmware changelog
 
+## Phase8.3B, 26 November2026
+
+| Change | Before | After / exact Arduino action | Classification |
+| --- | --- | --- | --- |
+| Inbound RETAIN metadata | MQTT callback loses retain information | Copy updated PoultriqArduino.h/Defaults.h plus new PoultriqMqttMetadata.h; pin MQTT2.5.2. Unknown/retained display rejected; config retained needs FW_DRAFT_RETAINED_CONFIG=1 only after staging approval | FIRMWARE_SYNC_REQUIRED |
+| Backend staging auth/outbox/ACK/session/LCD | Test-only feedback, unbound config adapter, LCD DTO only | Credential-scoped staging capability and strict ingress reuse existing lifecycle. No production subscriber or wire field changes; Arduino sender still absent | NO_FIRMWARE_CHANGE for locked wire; FIRMWARE_DECISION_REQUIRED for live sender/identity bridge |
+| LCD reported_at | DB datetime leaked into DTO after report | Backend now emits UTC ISO required by existing schema/parser | NO_FIRMWARE_CHANGE |
+| Firmware/Laravel evidence | Pure schema bridge only | Actual C++ generated payloads ingested into SQLite/MySQL and tested against REST/LCD; framing test coverage added | NO_FIRMWARE_CHANGE |
+
+No session/ACK/report live sender or relay driver was activated. Operational/lighting_lux remain separate, ACK acknowledged is not applied, and reported states are never inferred from demand. See current report for counts; the original0.1.0 notes below are historical.
+
 0.1.0,26 November2026. Newly implemented from Phase8.2 baseline; original experimental sketches were not supplied on disk and were not modified. Comparison below uses the user's prototype description, not a line-by-line audit of unavailable source.
 
 | Change | Before (reported prototype) | After / exact action | Classification |

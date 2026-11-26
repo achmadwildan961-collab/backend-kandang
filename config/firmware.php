@@ -5,6 +5,9 @@ return [
     'staging' => [
         'enabled' => (bool) env('MQTT_STAGING_ENABLED', false),
         'virtual_only' => (bool) env('MQTT_STAGING_VIRTUAL_ONLY', false),
+        'integration_enabled' => (bool) env('MQTT_STAGING_INTEGRATION_ENABLED', false),
+        // Test-only password_hash() values; username equals the VIRTUAL registry identifier.
+        'device_password_hashes' => json_decode(env('MQTT_STAGING_DEVICE_PASSWORD_HASHES', '{}'), true),
         'host' => env('MQTT_STAGING_HOST', '127.0.0.1'),
         'port' => (int) env('MQTT_STAGING_PORT', 18884),
         'username' => env('MQTT_STAGING_USERNAME'),

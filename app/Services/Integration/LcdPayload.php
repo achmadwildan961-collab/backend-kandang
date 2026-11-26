@@ -5,6 +5,7 @@ namespace App\Services\Integration;
 use App\Models\Coop;
 use App\Services\MonitoringContract;
 use App\Services\SensorAggregationService;
+use Carbon\CarbonImmutable;
 
 class LcdPayload
 {
@@ -30,7 +31,13 @@ class LcdPayload
         return ['schema_version' => 1, 'contract' => 'phase8_draft', 'coop_id' => $coop->id,
             'generated_at' => now()->toISOString(), 'expires_at' => now()->addSeconds(max(1, config('integration.display_seconds')))->toISOString(),
             'target_device_ids' => $coop->devices()->get()->filter(fn ($d) => $d->type === 'nodemcu_esp8266')->values()->modelKeys(),
-            'fields' => $fields, 'actuators' => app(IntegrationMonitor::class)->reports($coop),
+            'fields' => $fields, 'actuators' => array_map(function (array $report) {
+                // DB timestamps are not wire timestamps; the locked display schema requires UTC.
+                $report['reported_at'] = $report['reported_at'] === null ? null
+                    : CarbonImmutable::parse($report['reported_at'], 'UTC')->toISOString();
+
+                return $report;
+            }, app(IntegrationMonitor::class)->reports($coop)),
             'display_geometry' => null, 'publication_enabled' => false];
     }
 }

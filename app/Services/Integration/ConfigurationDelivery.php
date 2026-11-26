@@ -4,6 +4,7 @@ namespace App\Services\Integration;
 
 use App\Models\Coop;
 use App\Models\Device;
+use App\Services\Firmware\StagingIdentity;
 use App\Services\LuxLightingSettings;
 use Illuminate\Support\Facades\DB;
 
@@ -27,17 +28,23 @@ class ConfigurationDelivery
         throw new \InvalidArgumentException('Unknown configuration domain.');
     }
 
-    public function stage(Coop $coop, string $domain): void
+    public function stage(Coop $coop, string $domain, ?StagingIdentity $staging = null): void
     {
         if (DB::transactionLevel() < 1) {
             throw new \LogicException('Stage configuration within its settings transaction.');
         }
         Coop::whereKey($coop->id)->lockForUpdate()->firstOrFail();
+        if ($staging && $staging->device()->coop_id !== $coop->id) {
+            throw new \InvalidArgumentException('Staging configuration coop mismatch.');
+        }
         $current = $this->current($coop, $domain);
         if (! $current) {
             return;
         }
         foreach ($coop->devices()->get() as $device) {
+            if ($staging && $device->id !== $staging->deviceId) {
+                continue;
+            }
             $identity = ['coop_id' => $coop->id, 'device_id' => $device->id, 'domain' => $domain, 'config_version' => $current['version']];
             if (DB::table('integration_deliveries')->where($identity)->exists()) {
                 continue;
@@ -53,7 +60,7 @@ class ConfigurationDelivery
                 'domain' => $domain, 'config_version' => $current['version'], 'settings' => $current['settings'],
                 'generated_at' => now()->toISOString(), 'expires_at' => $expires->toISOString()];
             $json = CanonicalPayload::encode($payload);
-            $enabled = IntegrationPolicy::simulation() && IntegrationPolicy::target($device);
+            $enabled = ($staging !== null || IntegrationPolicy::simulation()) && IntegrationPolicy::target($device);
             DB::table('integration_deliveries')->insert($identity + ['message_id' => $message, 'payload_hash' => hash('sha256', $json),
                 'payload' => $json, 'status' => $enabled ? 'pending' : 'blocked', 'reason' => $enabled ? null : 'firmware_contract_unverified',
                 'expires_at' => $expires, 'next_attempt_at' => now(), 'created_at' => now(), 'updated_at' => now()]);

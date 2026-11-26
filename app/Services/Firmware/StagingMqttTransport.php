@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 use RuntimeException;
 
-/** Unbound config-only transport for a dedicated loopback virtual broker. */
+/** Unbound config/display transport for a dedicated loopback virtual broker. */
 class StagingMqttTransport implements MqttTransport
 {
     public function __construct(private StagingMqttFactory $factory) {}
@@ -34,11 +34,35 @@ class StagingMqttTransport implements MqttTransport
             throw new InvalidArgumentException('Staging configuration integrity or expiry rejected.');
         }
         $json = CanonicalPayload::encode($payload);
+        $this->deliver($topic, $json, $retained, $coop, $device, $payload['expires_at']);
+    }
+
+    public function publishDisplay(StagingIdentity $identity, array $payload, bool $retained = false): void
+    {
+        $device = $identity->device();
+        $this->factory->validate();
+        app(ContractSchema::class)->validate('display', $payload);
+        if ($retained || $device->type !== 'nodemcu_esp8266' || $payload['coop_id'] !== $device->coop_id
+            || ! in_array($device->id, $payload['target_device_ids'], true)
+            || ContractTime::parse($payload['generated_at'])->isFuture()
+            || ContractTime::parse($payload['expires_at'])->lte(now())) {
+            throw new InvalidArgumentException('Staging display scope, freshness or retained policy rejected.');
+        }
+        // publication_enabled=false remains the locked production capability declaration.
+        $topic = "smart-kandang/coops/{$device->coop_id}/devices/{$device->device_identifier}/integration/v1/display";
+        $this->deliver($topic, CanonicalPayload::encode($payload), false, $device->coop_id, $device->device_identifier, $payload['expires_at']);
+    }
+
+    private function deliver(string $topic, string $json, bool $retained, int $coop, string $device, string $expires): void
+    {
         for ($attempt = 1; $attempt <= min(3, max(1, config('firmware.staging.attempts'))); $attempt++) {
             $client = null;
             try {
                 $client = $this->factory->make();
                 $client->connect($this->factory->settings(), true);
+                if (ContractTime::parse($expires)->lte(now())) {
+                    throw new RuntimeException('Staging message expired before publish.');
+                }
                 $client->publish($topic, $json, 1, $retained);
                 $client->loop(true, true, min(10, max(1, config('firmware.staging.timeout_seconds'))));
                 if (! $client->brokerAcknowledged()) {

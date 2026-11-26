@@ -51,6 +51,8 @@ Settings lengkap: shared `PoultriqDefaults.h` (WiFi, MQTT TLS, NTP, sample/heart
 
 Draft compile coverage: `--build-property 'compiler.cpp.extra_flags=-DFW_DEVELOPMENT=1 -DFW_DRAFT_INTEGRATION=1 -DFW_DRAFT_DISPLAY=1'`. Flag ini tidak menyalakan network karena `FW_NETWORK_ENABLED` tetap0. Jangan menganggap compile flag sebagai authenticated session approval.
 
+Phase8.3B menambah `FW_DRAFT_RETAINED_CONFIG=0`. Hanya ubah ke1 untuk snapshot staging yang disetujui dengan development+draft integration aktif dan publisher staging retained authorization. Display selalu non-retained. Copy shared library termasuk `PoultriqMqttMetadata.h`; pin MQTT256dpi2.5.2 karena wrapper mengikuti perilaku read-before-callback lwmqtt versi ini. Jangan mengubah dependency tanpa compile, framing tests dan acceptance broker baru. Bukan izin mengaktifkan relay.
+
 Jangan gunakan `config.local.h` nyata saat menjalankan CI/compile verification yang harus memakai contoh. Tidak ada credentials aktual yang dibutuhkan untuk tes native atau kompilasi.
 
 ## Offline contract runner
@@ -64,3 +66,5 @@ php artisan firmware:contract-check
 ```
 
 Adjust only compiler/library/executable paths when running on another workstation. ArduinoJson version must match the tested firmware profile. The runner is a host development tool and must not be uploaded to a board. The two `.ino` sketches are the Arduino deliverables.
+
+Phase8.3B real C++ → Laravel DB/API tests: build runner above, set `POULTRIQ_NATIVE_RUNNER` to its absolute executable path, then `php vendor/bin/phpunit --filter=FirmwareStagingIntegrationTest` on isolated SQLite. Without the runner only native-dependent cases are explicitly skipped (NOT VERIFIED); the final workstation runs had no skips. Full MySQL regression must use a separately verified disposable instance and explicit test credentials; never run phpunit.mysql.xml against an operational server merely because the DB is named smart_kandang_test.

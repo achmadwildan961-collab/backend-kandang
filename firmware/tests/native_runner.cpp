@@ -1,6 +1,7 @@
 // Host execution of the SAME headers used by the Arduino sketches. No network.
 #include <PoultriqDisplay.h>
 #include <PoultriqSensors.h>
+#include <PoultriqMqttMetadata.h>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -97,7 +98,7 @@ void execute(JsonDocument &in, JsonDocument &out) {
         b.values[i++] = num(v);
     }
     ok = telemetry(same(in["board"], "outdoor") ? Board::Outdoor : Board::Indoor, b,
-                   "12345678-1234-4234-8234-123456789abc-1", buffer,
+                   in["message_id"] | "12345678-1234-4234-8234-123456789abc-1", buffer,
                    in["capacity"] | sizeof(buffer));
   } else if (mode == "status")
     ok = status("test-status-1", in["now"] | int64_t(1795593600), in["online"] | true, buffer,
@@ -154,14 +155,33 @@ void execute(JsonDocument &in, JsonDocument &out) {
     out["healthy"] = store.healthy();
     if (store.current.version && store.healthy()) {
       ok = ack(store.current, "acknowledged", in["coop"] | 1, in["device"] | "VIRTUAL_INDOOR",
-               "12345678-1234-4234-8234-123456789abc", "12345678-1234-4234-8234-123456789abd", 1,
+               in["boot"] | "12345678-1234-4234-8234-123456789abc",
+               in["message_id"] | "12345678-1234-4234-8234-123456789abd", in["sequence"] | 1,
                (in["now_us"] | int64_t(1795593600000000)) / 1000000, buffer, sizeof(buffer));
     }
   } else if (mode == "report")
-    ok = unknownReport(1, "VIRTUAL_INDOOR", "12345678-1234-4234-8234-123456789abc",
-                       "12345678-1234-4234-8234-123456789abd", in["sequence"] | 1,
-                       in["now"] | int64_t(1795593600), buffer, sizeof(buffer));
-  else if (mode == "display") {
+    ok = unknownReport(in["coop"] | 1, in["device"] | "VIRTUAL_INDOOR",
+                       in["boot"] | "12345678-1234-4234-8234-123456789abc",
+                       in["message_id"] | "12345678-1234-4234-8234-123456789abd",
+                       in["sequence"] | 1, in["now"] | int64_t(1795593600), buffer, sizeof(buffer));
+  else if (mode == "metadata") {
+    MqttMetadata metadata;
+    JsonArray results = out["results"].to<JsonArray>();
+    for (JsonVariantConst chunk : in["chunks"].as<JsonArrayConst>()) {
+      for (JsonVariantConst byte : chunk.as<JsonArrayConst>()) {
+        uint8_t value = byte.as<uint8_t>();
+        metadata.feed(&value, 1);
+      }
+      bool retained = false;
+      bool known = metadata.take(retained);
+      JsonObject result = results.add<JsonObject>();
+      result["known"] = known;
+      result["retained"] = retained;
+      result["allowed"] =
+          inboundPolicy(known, retained, in["configuration"] | false, in["authorized"] | false);
+    }
+    ok = true;
+  } else if (mode == "display") {
     const char *s = in["raw"] | "";
     Display display;
     ok = parseDisplay(s, strlen(s), in["coop"] | 1, in["registry"] | 2, in["indoor"] | 1,

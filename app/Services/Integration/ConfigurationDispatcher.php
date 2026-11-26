@@ -4,6 +4,8 @@ namespace App\Services\Integration;
 
 use App\Models\Coop;
 use App\Models\Device;
+use App\Services\Firmware\StagingIdentity;
+use App\Services\Firmware\StagingMqttTransport;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -12,18 +14,24 @@ class ConfigurationDispatcher
 {
     public function __construct(private MqttTransport $transport, private ConfigurationDelivery $configurations) {}
 
-    public function dispatch(int $id): string
+    public function dispatch(int $id, ?StagingIdentity $staging = null): string
     {
-        if (! IntegrationPolicy::simulation() || ! $this->transport instanceof FakeMqttTransport) {
+        if ($staging) {
+            $staging->device();
+        }
+        $allowed = $staging ? $this->transport instanceof StagingMqttTransport
+            : IntegrationPolicy::simulation() && $this->transport instanceof FakeMqttTransport;
+        if (! $allowed) {
             return 'blocked';
         }
-        $claim = DB::transaction(function () use ($id) {
+        $claim = DB::transaction(function () use ($id, $staging) {
             $candidate = DB::table('integration_deliveries')->find($id);
             if (! $candidate) {
                 return null;
             }
             Coop::whereKey($candidate->coop_id)->lockForUpdate()->firstOrFail();
             $device = Device::whereKey($candidate->device_id)->lockForUpdate()->firstOrFail();
+            $staging?->authorize($device);
             $row = DB::table('integration_deliveries')->where('id', $id)->lockForUpdate()->first();
             if (! in_array($row->status, ['pending', 'published', 'acknowledged'], true)
                 || ($row->lease_until && CarbonImmutable::parse($row->lease_until)->isFuture())) {
@@ -64,7 +72,7 @@ class ConfigurationDispatcher
         [$row, $device, $lease] = $claim;
         try {
             $payload = json_decode($row->payload, true, flags: JSON_THROW_ON_ERROR);
-            // Retained snapshots are simulated only. Publication is never application.
+            // Only explicit virtual staging or unit simulation; publication is never application.
             $this->transport->publish("smart-kandang/coops/{$row->coop_id}/devices/{$device->device_identifier}/integration/v1/config/{$row->domain}",
                 $payload + ['payload_hash' => $row->payload_hash], true, $row->message_id);
             $changes = ['status' => $row->status === 'acknowledged' ? 'acknowledged' : 'published', 'published_at' => now(),

@@ -1,6 +1,30 @@
-# Backend compatibility and gaps — Phase8.3
+# Backend compatibility and gaps — Phase8.3B
 
-Tidak ada backend PHP/config/routes/tests/migrations atau locked contracts yang diubah. Semua rekomendasi di bawah adalah pekerjaan terpisah, bukan gate yang telah dibuka oleh firmware.
+Phase8.3B menutup gap software staging melalui reuse layanan backend existing, pengujian C++ aktual ke DB/API dan adapter retain Arduino. Backend PHP/config/tests berubah; routes/migrations/locked contracts tetap. Semua produksi, push dan physical commands tetap disabled. Hasil tes dan exact inventory ada di [report](../PHASE8_3_REPORT.md).
+
+## Status gap setelah implementasi8.3B
+
+| Gap | Selesai software | Yang belum disahkan/terverifikasi | Classification perubahan |
+| --- | --- | --- | --- |
+| B0 telemetry registration | Actual C++ Indoor11/Outdoor3 channels masuk DB/API schema2, partial RH terpisah, allowlist enforced | Registry/sensor provenance fisik dan BH1750 capability approval | NO_FIRMWARE_CHANGE |
+| B1 identity/session/feedback | StagingIdentity password_hash scoped/revocable; StagingIngress strict authenticated context, retained/TTL/replay/session checks memakai DeviceFeedback existing | Broker identity/ACL bridge dan live session/ACK/report sender Arduino; MQTT subscriber biasa tidak memberi username publisher | NO_FIRMWARE_CHANGE untuk locked wire; FIRMWARE_DECISION_REQUIRED untuk production handshake |
+| B2 config lifecycle | Optional per-device staging capability menggunakan stage/dispatcher existing; independent domains, lease/retry/expiry, ACK dan reboot lifecycle; blocked rows tidak didrain | Production binding tetap disabled; real PUBACK/ACK/NVS acceptance | NO_FIRMWARE_CHANGE |
+| B3 LCD | Scoped NodeMCU publisher QoS1/non-retained/expiry/retry; timestamp report dinormalisasi UTC; actual C++ parser roundtrip | Display wire approval/numeric ID provisioning/LCD fisik | NO_FIRMWARE_CHANGE untuk UTC fix; FIRMWARE_DECISION_REQUIRED untuk live display |
+| B4 canonical integrity | C++ parser tetap menjaga scalar lexemes PHP; config actual outbox diparse/stored/ACK | Hash bukan autentikasi; standardisasi canonical masa depan perlu version review | NO_FIRMWARE_CHANGE |
+| B5 preview control | Existing PHP/C++ heater/two-fan/gas/lux parity tetap lulus | Operational threshold/calibration/interlock/authority belum approved | NO_FIRMWARE_CHANGE |
+| B6 physical actuation | Tidak ada driver/command enable; ACK tidak membuat physical_verified | Polarity/GPIO/boot/interlock/anti-short-cycle/feedback/safety acceptance | FIRMWARE_DECISION_REQUIRED |
+| B7 reconnect/offline | Fresh session/reboot requeues current config, retired/replayed boot rejected; duplicate tidak refresh online; expired/offline dispatch withheld | RF/time synchronization, LWT protocol dan cross-node exact timestamp pairing | NO_FIRMWARE_CHANGE; FIRMWARE_DECISION_REQUIRED bila wire baru diperlukan |
+| B8 persistence | ESP32 Preferences readback + native mock failure tests tetap; acknowledged terpisah dari applied | Real NVS power-cut/wear, Outdoor RAM durability policy, expired/offline authority | FIRMWARE_DECISION_REQUIRED |
+| B9 RETAIN | MetadataClient di shared runtime, parser bounded/single-use, unknown fail-closed; display retained rejected, config requires explicit retained flag | Real broker/board packet/TLS/oversize tests; MQTT3 forwarded retain bit tidak membuktikan publisher option asli sehingga broker policy tetap perlu | FIRMWARE_SYNC_REQUIRED |
+| B10 lux control authority | Pure hysteresis saja; Outdoor lux tetap telemetry/LCD | Belum ada approved ESP32 lux feed/prior state; pilih satu controller dan expiry/fault rules | FIRMWARE_DECISION_REQUIRED |
+
+**Tidak diimplementasikan sebagai live fitur:** production subscriber/session bridge, Arduino network session/ACK/report sender, actual device applied authority, physical control/manual command driver, calibrated ppm, real push provider. Ini memerlukan keputusan protokol/hardware, bukan alasan untuk mengklaim mock sebagai live.
+
+**Keamanan staging:** explicit flags defaultfalse, VIRTUAL scope, dedicated loopback endpoint/test DB, hashed credentials. Production MQTT binding tidak diubah. Hanya trusted caller boleh memegang identity capability; jangan membuatnya dengan lookup sandi berdasarkan payload. Test broker belum tersedia: **BROKER-LIVE NOT VERIFIED**. Lihat [MQTT compatibility](MQTT_COMPATIBILITY.md) untuk exact ACL dan invocation boundary.
+
+## Arsip gap Phase8.3A sebelum perubahan di atas
+
+Tabel berikut menjelaskan kondisi baseline `c3ae546`; B1/B2/B3/B9 software staging sudah diperbaiki seperti tabel terbaru, bukan pekerjaan yang perlu diulang.
 
 | ID / classification | Exact source / current behavior | Expected / blocker | Suggested safe fix / contract impact / tests |
 | --- | --- | --- | --- |
