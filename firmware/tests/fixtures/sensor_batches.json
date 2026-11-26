@@ -1,0 +1,11 @@
+{
+  "description": "Synthetic offline inputs; never physical measurements or safety thresholds.",
+  "cases": [
+    {"board": "indoor", "values": [28, 28, 28, 28, 28, 65, 65, 65, 65, 65, 1000], "expected_count": 11},
+    {"board": "indoor", "values": [28, 28, 28, 28, 28, 65, null, 65, 65, 65, 1000], "expected_count": 10},
+    {"board": "outdoor", "values": [28, 65, 120], "expected_count": 3},
+    {"board": "outdoor", "values": [28, 65, null], "expected_count": 2},
+    {"board": "outdoor", "values": [null, null, 0], "expected_count": 1},
+    {"board": "outdoor", "values": [null, null, null], "expected_count": 0}
+  ]
+}

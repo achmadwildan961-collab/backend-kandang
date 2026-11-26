@@ -1,0 +1,10 @@
+**/config.local.h
+**/credentials*.h
+**/*.pem
+**/*.key
+build/
+tests/output/
+**/__pycache__/
+*.bin
+*.elf
+*.map
